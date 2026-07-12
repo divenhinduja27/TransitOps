@@ -1,383 +1,450 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useERP } from '../context/ERPContext';
+import Header from '../components/Header';
 
 const VehicleRegistry = () => {
+  const { vehicles, addVehicle, editVehicle, deleteVehicle } = useERP();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  
+  // Modals state
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [currentVehicle, setCurrentVehicle] = useState(null);
+  
+  // Forms state
+  const [formData, setFormData] = useState({
+    registrationNumber: '',
+    make: '',
+    model: '',
+    type: 'Container',
+    capacity: '',
+    lastServiceDate: new Date().toISOString().split('T')[0]
+  });
+  const [error, setError] = useState('');
+
+  // Handle Add Form Submit
+  const handleAddSubmit = (e) => {
+    e.preventDefault();
+    setError('');
+    try {
+      addVehicle(formData);
+      setShowAddModal(false);
+      resetForm();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  // Handle Edit Form Submit
+  const handleEditSubmit = (e) => {
+    e.preventDefault();
+    setError('');
+    try {
+      editVehicle(currentVehicle);
+      setShowEditModal(false);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      registrationNumber: '',
+      make: '',
+      model: '',
+      type: 'Container',
+      capacity: '',
+      lastServiceDate: new Date().toISOString().split('T')[0]
+    });
+    setError('');
+  };
+
+  const openEditModal = (vehicle) => {
+    setCurrentVehicle({ ...vehicle });
+    setError('');
+    setShowEditModal(true);
+  };
+
+  const handleDelete = (id) => {
+    if (window.confirm('Are you sure you want to delete this vehicle from the registry?')) {
+      try {
+        deleteVehicle(id);
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+  };
+
+  // Filtered List
+  const filteredVehicles = vehicles.filter(v => {
+    const matchesSearch = 
+      v.registrationNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      v.make.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      v.model.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      v.type.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'All' || v.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
   return (
     <>
-      {/* Page Specific Styles */}
       <style>{`
-        body {
-            background-color: #111111;
-            color: #f3dfd1;
-            font-family: 'Inter', sans-serif;
-        }
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-        /* Custom scrollbar for data tables */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #1b110a;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #3f3229;
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #564334;
-        }
         .glass-panel {
-            background: rgba(30, 30, 30, 0.7);
+            background: rgba(30, 30, 30, 0.6);
             backdrop-filter: blur(12px);
-            border: 1px solid #2e2e2e;
+            border: 1px solid #2E2E2E;
         }
-
+        .form-input {
+            background-color: #161616;
+            border: 1px solid #2E2E2E;
+            color: #e6e1e2;
+            width: 100%;
+            height: 40px;
+            padding: 0 12px;
+            border-radius: 6px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-input:focus {
+            border-color: #ff8a00;
+        }
       `}</style>
-      
-      <main className="ml-[260px] min-h-screen flex flex-col">
 
-<header className="flex justify-between items-center w-full px-margin-desktop py-md sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-outline-variant">
-<div className="flex items-center gap-4 flex-1">
-<div className="relative w-full max-w-md group">
-<span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">search</span>
-<input className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg py-2 pl-10 pr-4 font-body-md text-on-surface focus:outline-none focus:border-primary transition-all" placeholder="Search vehicle registry..." type="text"/>
-</div>
-</div>
-<div className="flex items-center gap-4">
-<button className="flex items-center gap-2 px-4 py-2 border border-outline-variant rounded-lg text-on-surface font-title-md hover:bg-surface-container-highest transition-all active:opacity-80">
-<span className="material-symbols-outlined">add</span>
-                    Add Vehicle
-                </button>
-<button className="bg-primary-container text-on-primary-container px-4 py-2 rounded-lg font-title-md font-bold hover:opacity-90 transition-all active:opacity-80">
-                    New Trip
-                </button>
-<div className="flex items-center gap-1 border-l border-outline-variant ml-2 pl-4">
-<button className="p-2 text-on-surface-variant hover:bg-surface-container-highest rounded-full transition-all">
-<span className="material-symbols-outlined">notifications</span>
-</button>
-<button className="p-2 text-on-surface-variant hover:bg-surface-container-highest rounded-full transition-all">
-<span className="material-symbols-outlined">help_outline</span>
-</button>
-<div className="w-8 h-8 rounded-full overflow-hidden border border-outline-variant ml-2">
-<img className="w-full h-full object-cover" data-alt="Close-up professional portrait of a senior logistics operations manager in a dark grey suit, set against a blurred background of a high-tech control room with orange data monitors. The lighting is dramatic and warm, reflecting the TransitOps brand colors and a focus on high-stakes transport management." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBC4-Jpiennot8XXziFqN6KusOw0oY1J9pr0gPV6VziKugf4cI-C5_conIVo7jSrS7j-L5VStqhX5XxiZNJI2b8VwLDekVPbkfZ85wkbIqgQnyfpNoIeD61YmTwu5wHQzcGVVw2-vvKpoNIsuMNhswd-NH0ZkPBvoVzhYH2RzwvcIOeaEp1dOgXBpwplFuXdXdDFkvQZ7uN0tgUZxOSm6_8SboxFt6W9tYL_dp6AN47BHlPKQC-EPhM3A"/>
-</div>
-</div>
-</div>
-</header>
+      <main className="ml-[260px] min-h-screen flex flex-col bg-[#111111] text-[#e6e1e2]">
+        <Header 
+          title="Vehicle Registry" 
+          subtitle="Manage enterprise fleet assets"
+          searchPlaceholder="Search vehicles by reg#, brand..."
+          searchValue={searchQuery}
+          onSearchChange={(e) => setSearchQuery(e.target.value)}
+          actions={
+            <button 
+              onClick={() => { resetForm(); setShowAddModal(true); }}
+              className="bg-[#ff8a00] text-black px-5 py-2 rounded-full font-semibold hover:opacity-90 active:scale-95 transition-all flex items-center gap-2 text-sm cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[18px]">add</span>
+              Add Vehicle
+            </button>
+          }
+        />
 
-<div className="p-margin-desktop flex-1 flex flex-col gap-gutter">
+        <div className="p-6 space-y-6 flex-grow">
+          {/* Controls Bar */}
+          <div className="flex justify-between items-center bg-[#1A1A1A]/40 border border-[#2E2E2E] p-4 rounded-xl">
+            <div className="flex items-center gap-4">
+              <span className="text-xs text-on-surface-variant font-bold uppercase">Status Filter:</span>
+              <div className="flex gap-2">
+                {['All', 'Available', 'Dispatched', 'In Shop'].map(status => (
+                  <button
+                    key={status}
+                    onClick={() => setStatusFilter(status)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                      statusFilter === status 
+                        ? 'bg-secondary-container text-on-secondary-container' 
+                        : 'bg-[#1E1E1E] text-on-surface-variant hover:bg-[#2E2E2E]'
+                    }`}
+                  >
+                    {status}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="text-xs text-on-surface-variant font-semibold">
+              Showing {filteredVehicles.length} of {vehicles.length} assets
+            </div>
+          </div>
 
-<div className="flex justify-between items-end mb-2">
-<div>
-<h2 className="font-headline-lg text-headline-lg text-on-surface">Vehicle Registry</h2>
-<p className="text-on-surface-variant font-body-md">Managing 124 active fleet assets</p>
-</div>
-<div className="flex gap-4">
-<div className="flex flex-col items-end">
-<span className="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider">Active Status</span>
-<div className="flex items-baseline gap-2">
-<span className="text-headline-md font-headline-md text-primary">88%</span>
-<span className="text-tertiary font-body-sm">+2.4%</span>
-</div>
-</div>
-<div className="w-px h-10 bg-outline-variant mx-2"></div>
-<div className="flex flex-col items-end">
-<span className="text-label-md font-label-md text-on-surface-variant uppercase tracking-wider">In Shop</span>
-<div className="flex items-baseline gap-2">
-<span className="text-headline-md font-headline-md text-error">4</span>
-<span className="text-on-surface-variant font-body-sm">Vehicles</span>
-</div>
-</div>
-</div>
-</div>
+          {/* Fleet Inventory Table */}
+          <div className="glass-panel rounded-xl overflow-hidden shadow-xl">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-[#2E2E2E] text-on-surface-variant/60 text-xs font-bold uppercase bg-[#161616]/40">
+                    <th className="py-4 px-4">Registration</th>
+                    <th className="py-4 px-4">Manufacturer & Model</th>
+                    <th className="py-4 px-4">Type</th>
+                    <th className="py-4 px-4 text-right">Max Load Capacity</th>
+                    <th className="py-4 px-4">Last Service</th>
+                    <th className="py-4 px-4 text-center">Status</th>
+                    <th className="py-4 px-4 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#2E2E2E]/40">
+                  {filteredVehicles.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" className="py-12 text-center text-on-surface-variant/40">
+                        No fleet vehicles match the active filters.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredVehicles.map(vehicle => (
+                      <tr key={vehicle.id} className="hover:bg-[#1E1E1E]/40 transition-colors">
+                        <td className="py-4 px-4 font-mono font-bold text-primary">{vehicle.registrationNumber}</td>
+                        <td className="py-4 px-4">
+                          <span className="font-semibold text-on-surface">{vehicle.make}</span>
+                          <span className="text-xs text-on-surface-variant/80 ml-2">({vehicle.model})</span>
+                        </td>
+                        <td className="py-4 px-4 text-xs">
+                          <span className="bg-[#1E1E1E] border border-[#2E2E2E] px-2 py-1 rounded text-on-surface-variant">
+                            {vehicle.type}
+                          </span>
+                        </td>
+                        <td className="py-4 px-4 text-right font-mono font-bold">{(vehicle.capacity).toLocaleString()} kg</td>
+                        <td className="py-4 px-4 text-xs font-mono text-on-surface-variant/80">{vehicle.lastServiceDate || 'N/A'}</td>
+                        <td className="py-4 px-4 text-center">
+                          <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold ${
+                            vehicle.status === 'Available' ? 'bg-green-500/10 text-green-400 border border-green-500/30' :
+                            vehicle.status === 'Dispatched' ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30' :
+                            'bg-red-500/10 text-red-400 border border-red-500/30'
+                          }`}>
+                            {vehicle.status}
+                          </span>
+                        </td>
+                        <td className="py-4 px-4 text-center">
+                          <div className="flex justify-center gap-2">
+                            <button 
+                              onClick={() => openEditModal(vehicle)}
+                              className="p-1.5 text-on-surface-variant hover:text-white bg-[#1E1E1E] border border-[#2E2E2E] rounded hover:border-[#ff8a00] transition-all cursor-pointer"
+                              title="Edit Vehicle"
+                            >
+                              <span className="material-symbols-outlined text-[16px]">edit</span>
+                            </button>
+                            <button 
+                              onClick={() => handleDelete(vehicle.id)}
+                              className="p-1.5 text-red-400 hover:text-red-300 bg-[#1E1E1E] border border-[#2E2E2E] rounded hover:border-red-500 transition-all cursor-pointer"
+                              title="Delete Vehicle"
+                            >
+                              <span className="material-symbols-outlined text-[16px]">delete</span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
 
-<div className="flex items-center justify-between gap-4 glass-panel p-4 rounded-xl">
-<div className="flex items-center gap-3">
-<div className="relative group">
-<select className="appearance-none bg-surface-container border border-outline-variant rounded-lg py-2 pl-4 pr-10 font-body-md text-on-surface focus:outline-none focus:border-primary transition-all cursor-pointer min-w-[180px]">
-<option>Filter by Status</option>
-<option>In Use</option>
-<option>Available</option>
-<option>Maintenance</option>
-<option>In Shop</option>
-</select>
-<span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">expand_more</span>
-</div>
-<div className="relative group">
-<select className="appearance-none bg-surface-container border border-outline-variant rounded-lg py-2 pl-4 pr-10 font-body-md text-on-surface focus:outline-none focus:border-primary transition-all cursor-pointer min-w-[150px]">
-<option>Model Type</option>
-<option>Heavy Duty</option>
-<option>Light Van</option>
-<option>Cold Chain</option>
-</select>
-<span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">filter_list</span>
-</div>
-</div>
-<div className="flex items-center gap-2">
-<button className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg border border-outline-variant transition-all">
-<span className="material-symbols-outlined">download</span>
-</button>
-<button className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg border border-outline-variant transition-all">
-<span className="material-symbols-outlined">print</span>
-</button>
-</div>
-</div>
+        {/* ADD VEHICLE MODAL */}
+        {showAddModal && (
+          <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+            <div className="glass-panel w-full max-w-md rounded-xl p-6 relative">
+              <h3 className="text-lg font-bold border-b border-[#2E2E2E] pb-3 mb-4 flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#ff8a00]">directions_car</span>
+                Register New Fleet Vehicle
+              </h3>
+              {error && (
+                <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg text-xs flex gap-2">
+                  <span className="material-symbols-outlined text-[16px]">error</span>
+                  <span>{error}</span>
+                </div>
+              )}
+              <form onSubmit={handleAddSubmit} className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-xs text-on-surface-variant/80 font-bold uppercase">Registration Number</label>
+                  <input
+                    className="form-input font-mono uppercase"
+                    type="text"
+                    required
+                    placeholder="e.g. MH-12-AB-1234"
+                    value={formData.registrationNumber}
+                    onChange={(e) => setFormData({ ...formData, registrationNumber: e.target.value })}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs text-on-surface-variant/80 font-bold uppercase">Make (Brand)</label>
+                    <input
+                      className="form-input"
+                      type="text"
+                      required
+                      placeholder="Volvo, Tata..."
+                      value={formData.make}
+                      onChange={(e) => setFormData({ ...formData, make: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-on-surface-variant/80 font-bold uppercase">Model</label>
+                    <input
+                      className="form-input"
+                      type="text"
+                      required
+                      placeholder="FH16, Signa..."
+                      value={formData.model}
+                      onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs text-on-surface-variant/80 font-bold uppercase">Vehicle Type</label>
+                    <select
+                      className="form-input bg-[#161616] text-on-surface"
+                      value={formData.type}
+                      onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                    >
+                      <option value="Container">Container</option>
+                      <option value="Heavy Truck">Heavy Truck</option>
+                      <option value="Flatbed">Flatbed</option>
+                      <option value="Tanker">Tanker</option>
+                      <option value="Dumper">Dumper</option>
+                      <option value="Cargo Van">Cargo Van</option>
+                      <option value="Box Truck">Box Truck</option>
+                      <option value="Trailer">Trailer</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-on-surface-variant/80 font-bold uppercase">Max Capacity (kg)</label>
+                    <input
+                      className="form-input"
+                      type="number"
+                      required
+                      placeholder="e.g. 20000"
+                      value={formData.capacity}
+                      onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-on-surface-variant/80 font-bold uppercase">Last Service Date</label>
+                  <input
+                    className="form-input"
+                    type="date"
+                    required
+                    value={formData.lastServiceDate}
+                    onChange={(e) => setFormData({ ...formData, lastServiceDate: e.target.value })}
+                  />
+                </div>
+                <div className="flex gap-3 justify-end pt-4 border-t border-[#2E2E2E]">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    className="px-4 py-2 bg-transparent text-on-surface-variant hover:text-white text-sm font-semibold rounded cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-[#ff8a00] text-black text-sm font-bold rounded hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+                  >
+                    Save Vehicle
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
-<div className="flex-1 bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden flex flex-col shadow-2xl">
-<div className="overflow-x-auto">
-<table className="w-full text-left border-collapse">
-<thead className="bg-surface-container-low sticky top-0 z-10">
-<tr>
-<th className="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider border-b border-outline-variant">Vehicle ID</th>
-<th className="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider border-b border-outline-variant">Model</th>
-<th className="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider border-b border-outline-variant">Plate</th>
-<th className="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider border-b border-outline-variant">Status</th>
-<th className="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider border-b border-outline-variant">Driver</th>
-<th className="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider border-b border-outline-variant">Fuel Level</th>
-<th className="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider border-b border-outline-variant">Odometer</th>
-<th className="px-6 py-4 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider border-b border-outline-variant text-right">Actions</th>
-</tr>
-</thead>
-<tbody className="divide-y divide-outline-variant/30">
-
-<tr className="hover:bg-surface-container transition-colors group">
-<td className="px-6 py-4 font-body-md text-primary font-bold">TRK-2904</td>
-<td className="px-6 py-4 font-body-md text-on-surface">Freightliner Cascadia 126</td>
-<td className="px-6 py-4 font-body-md text-on-surface-variant">TX-492-BFG</td>
-<td className="px-6 py-4">
-<span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-secondary/10 border border-secondary text-secondary text-label-sm font-bold uppercase">
-<span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
-                                        In Use
-                                    </span>
-</td>
-<td className="px-6 py-4 flex items-center gap-2">
-<div className="w-6 h-6 rounded-full bg-surface-container-highest border border-outline-variant"></div>
-<span className="font-body-md text-on-surface">Marcus Thorne</span>
-</td>
-<td className="px-6 py-4">
-<div className="flex items-center gap-2">
-<div className="flex-1 h-1.5 bg-surface-container rounded-full overflow-hidden min-w-[60px]">
-<div className="h-full bg-primary" style={{ width: "78%" }}></div>
-</div>
-<span className="font-label-md text-on-surface">78%</span>
-</div>
-</td>
-<td className="px-6 py-4 font-body-md text-on-surface-variant">142,831 mi</td>
-<td className="px-6 py-4 text-right">
-<button className="p-1 text-on-surface-variant hover:text-primary transition-colors">
-<span className="material-symbols-outlined">more_vert</span>
-</button>
-</td>
-</tr>
-
-<tr className="hover:bg-surface-container transition-colors group">
-<td className="px-6 py-4 font-body-md text-primary font-bold">TRK-1102</td>
-<td className="px-6 py-4 font-body-md text-on-surface">Volvo VNL 860</td>
-<td className="px-6 py-4 font-body-md text-on-surface-variant">CA-811-QWZ</td>
-<td className="px-6 py-4">
-<span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-tertiary/10 border border-tertiary text-tertiary text-label-sm font-bold uppercase">
-<span className="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
-                                        Available
-                                    </span>
-</td>
-<td className="px-6 py-4">
-<span className="font-body-md text-on-surface-variant italic">Unassigned</span>
-</td>
-<td className="px-6 py-4">
-<div className="flex items-center gap-2">
-<div className="flex-1 h-1.5 bg-surface-container rounded-full overflow-hidden min-w-[60px]">
-<div className="h-full bg-primary" style={{ width: "42%" }}></div>
-</div>
-<span className="font-label-md text-on-surface">42%</span>
-</div>
-</td>
-<td className="px-6 py-4 font-body-md text-on-surface-variant">89,204 mi</td>
-<td className="px-6 py-4 text-right">
-<button className="p-1 text-on-surface-variant hover:text-primary transition-colors">
-<span className="material-symbols-outlined">more_vert</span>
-</button>
-</td>
-</tr>
-
-<tr className="hover:bg-surface-container transition-colors group">
-<td className="px-6 py-4 font-body-md text-primary font-bold">VAN-084</td>
-<td className="px-6 py-4 font-body-md text-on-surface">Mercedes Sprinter 3500</td>
-<td className="px-6 py-4 font-body-md text-on-surface-variant">FL-229-JKP</td>
-<td className="px-6 py-4">
-<span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-surface-variant text-on-surface-variant border border-outline-variant text-label-sm font-bold uppercase">
-<span className="w-1.5 h-1.5 rounded-full bg-on-surface-variant"></span>
-                                        Maintenance
-                                    </span>
-</td>
-<td className="px-6 py-4 flex items-center gap-2">
-<div className="w-6 h-6 rounded-full bg-surface-container-highest border border-outline-variant"></div>
-<span className="font-body-md text-on-surface">S. Rodriguez</span>
-</td>
-<td className="px-6 py-4">
-<div className="flex items-center gap-2">
-<div className="flex-1 h-1.5 bg-surface-container rounded-full overflow-hidden min-w-[60px]">
-<div className="h-full bg-primary" style={{ width: "95%" }}></div>
-</div>
-<span className="font-label-md text-on-surface">95%</span>
-</div>
-</td>
-<td className="px-6 py-4 font-body-md text-on-surface-variant">12,450 mi</td>
-<td className="px-6 py-4 text-right">
-<button className="p-1 text-on-surface-variant hover:text-primary transition-colors">
-<span className="material-symbols-outlined">more_vert</span>
-</button>
-</td>
-</tr>
-
-<tr className="hover:bg-surface-container transition-colors group">
-<td className="px-6 py-4 font-body-md text-primary font-bold">TRK-4409</td>
-<td className="px-6 py-4 font-body-md text-on-surface">Peterbilt 579 UltraLoft</td>
-<td className="px-6 py-4 font-body-md text-on-surface-variant">NY-005-TRX</td>
-<td className="px-6 py-4">
-<span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-error/10 border border-error text-error text-label-sm font-bold uppercase">
-<span className="w-1.5 h-1.5 rounded-full bg-error"></span>
-                                        In Shop
-                                    </span>
-</td>
-<td className="px-6 py-4">
-<span className="font-body-md text-on-surface-variant italic">N/A</span>
-</td>
-<td className="px-6 py-4">
-<div className="flex items-center gap-2">
-<div className="flex-1 h-1.5 bg-surface-container rounded-full overflow-hidden min-w-[60px]">
-<div className="h-full bg-error" style={{ width: "12%" }}></div>
-</div>
-<span className="font-label-md text-error">12%</span>
-</div>
-</td>
-<td className="px-6 py-4 font-body-md text-on-surface-variant">210,033 mi</td>
-<td className="px-6 py-4 text-right">
-<button className="p-1 text-on-surface-variant hover:text-primary transition-colors">
-<span className="material-symbols-outlined">more_vert</span>
-</button>
-</td>
-</tr>
-
-<tr className="hover:bg-surface-container transition-colors group">
-<td className="px-6 py-4 font-body-md text-primary font-bold">TRK-2905</td>
-<td className="px-6 py-4 font-body-md text-on-surface">Freightliner Cascadia 126</td>
-<td className="px-6 py-4 font-body-md text-on-surface-variant">TX-493-BFG</td>
-<td className="px-6 py-4">
-<span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-secondary/10 border border-secondary text-secondary text-label-sm font-bold uppercase">
-<span className="w-1.5 h-1.5 rounded-full bg-secondary"></span>
-                                        In Use
-                                    </span>
-</td>
-<td className="px-6 py-4 flex items-center gap-2">
-<div className="w-6 h-6 rounded-full bg-surface-container-highest border border-outline-variant"></div>
-<span className="font-body-md text-on-surface">J. Henderson</span>
-</td>
-<td className="px-6 py-4">
-<div className="flex items-center gap-2">
-<div className="flex-1 h-1.5 bg-surface-container rounded-full overflow-hidden min-w-[60px]">
-<div className="h-full bg-primary" style={{ width: "65%" }}></div>
-</div>
-<span className="font-label-md text-on-surface">65%</span>
-</div>
-</td>
-<td className="px-6 py-4 font-body-md text-on-surface-variant">156,220 mi</td>
-<td className="px-6 py-4 text-right">
-<button className="p-1 text-on-surface-variant hover:text-primary transition-colors">
-<span className="material-symbols-outlined">more_vert</span>
-</button>
-</td>
-</tr>
-
-<tr className="hover:bg-surface-container transition-colors group">
-<td className="px-6 py-4 font-body-md text-primary font-bold">TRK-3001</td>
-<td className="px-6 py-4 font-body-md text-on-surface">Kenworth T680</td>
-<td className="px-6 py-4 font-body-md text-on-surface-variant">WA-992-LLP</td>
-<td className="px-6 py-4">
-<span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-tertiary/10 border border-tertiary text-tertiary text-label-sm font-bold uppercase">
-<span className="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
-                                        Available
-                                    </span>
-</td>
-<td className="px-6 py-4">
-<span className="font-body-md text-on-surface-variant italic">Unassigned</span>
-</td>
-<td className="px-6 py-4">
-<div className="flex items-center gap-2">
-<div className="flex-1 h-1.5 bg-surface-container rounded-full overflow-hidden min-w-[60px]">
-<div className="h-full bg-primary" style={{ width: "82%" }}></div>
-</div>
-<span className="font-label-md text-on-surface">82%</span>
-</div>
-</td>
-<td className="px-6 py-4 font-body-md text-on-surface-variant">45,391 mi</td>
-<td className="px-6 py-4 text-right">
-<button className="p-1 text-on-surface-variant hover:text-primary transition-colors">
-<span className="material-symbols-outlined">more_vert</span>
-</button>
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-
-<div className="mt-auto bg-surface-container-low px-6 py-4 flex items-center justify-between border-t border-outline-variant">
-<span className="text-body-sm text-on-surface-variant">Showing 1 to 6 of 124 entries</span>
-<div className="flex gap-2">
-<button className="px-3 py-1 border border-outline-variant rounded hover:bg-surface-container-high transition-all text-on-surface-variant">Previous</button>
-<button className="px-3 py-1 bg-primary text-on-primary font-bold rounded">1</button>
-<button className="px-3 py-1 border border-outline-variant rounded hover:bg-surface-container-high transition-all text-on-surface-variant">2</button>
-<button className="px-3 py-1 border border-outline-variant rounded hover:bg-surface-container-high transition-all text-on-surface-variant">3</button>
-<span className="px-2 py-1 text-on-surface-variant">...</span>
-<button className="px-3 py-1 border border-outline-variant rounded hover:bg-surface-container-high transition-all text-on-surface-variant">Next</button>
-</div>
-</div>
-</div>
-
-<div className="grid grid-cols-1 md:grid-cols-3 gap-gutter mt-4">
-<div className="glass-panel p-6 rounded-xl flex flex-col gap-2">
-<div className="flex justify-between items-start">
-<span className="material-symbols-outlined text-primary bg-primary/10 p-2 rounded-lg">local_gas_station</span>
-<span className="text-tertiary font-label-md flex items-center gap-1">
-<span className="material-symbols-outlined text-[14px]">trending_down</span> -4.2%
-                        </span>
-</div>
-<span className="font-label-md text-on-surface-variant uppercase mt-2">Avg Fuel Efficiency</span>
-<span className="font-headline-md text-on-surface">6.8 MPG</span>
-</div>
-<div className="glass-panel p-6 rounded-xl flex flex-col gap-2">
-<div className="flex justify-between items-start">
-<span className="material-symbols-outlined text-secondary bg-secondary/10 p-2 rounded-lg">warning</span>
-<span className="text-error font-label-md flex items-center gap-1">
-<span className="material-symbols-outlined text-[14px]">notification_important</span> Critical
-                        </span>
-</div>
-<span className="font-label-md text-on-surface-variant uppercase mt-2">Maintenance Alerts</span>
-<span className="font-headline-md text-on-surface">8 Pending</span>
-</div>
-<div className="glass-panel p-6 rounded-xl flex flex-col gap-2 relative overflow-hidden">
-<div className="relative z-10">
-<div className="flex justify-between items-start">
-<span className="material-symbols-outlined text-tertiary bg-tertiary/10 p-2 rounded-lg">speed</span>
-<span className="text-on-surface-variant font-label-md">Last 24h</span>
-</div>
-<span className="font-label-md text-on-surface-variant uppercase mt-2">Total Distance</span>
-<span className="font-headline-md text-on-surface">14,204.5 mi</span>
-</div>
-
-<div className="absolute bottom-0 left-0 w-full h-12 opacity-30 bg-gradient-to-t from-tertiary/20 to-transparent"></div>
-</div>
-</div>
-</div>
-
-<footer className="px-margin-desktop py-4 flex justify-between items-center text-label-md text-on-surface-variant/40 border-t border-outline-variant/10">
-<span>© 2024 TransitOps Logistics Systems v2.4.1</span>
-<span className="flex items-center gap-2">
-<span className="w-2 h-2 rounded-full bg-secondary"></span> System Online
-            </span>
-</footer>
-</main>
+        {/* EDIT VEHICLE MODAL */}
+        {showEditModal && currentVehicle && (
+          <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+            <div className="glass-panel w-full max-w-md rounded-xl p-6 relative">
+              <h3 className="text-lg font-bold border-b border-[#2E2E2E] pb-3 mb-4 flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#ff8a00]">edit</span>
+                Modify Vehicle Registry
+              </h3>
+              {error && (
+                <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg text-xs flex gap-2">
+                  <span className="material-symbols-outlined text-[16px]">error</span>
+                  <span>{error}</span>
+                </div>
+              )}
+              <form onSubmit={handleEditSubmit} className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-xs text-on-surface-variant/80 font-bold uppercase">Registration Number</label>
+                  <input
+                    className="form-input font-mono uppercase"
+                    type="text"
+                    required
+                    value={currentVehicle.registrationNumber}
+                    onChange={(e) => setCurrentVehicle({ ...currentVehicle, registrationNumber: e.target.value })}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs text-on-surface-variant/80 font-bold uppercase">Make (Brand)</label>
+                    <input
+                      className="form-input"
+                      type="text"
+                      required
+                      value={currentVehicle.make}
+                      onChange={(e) => setCurrentVehicle({ ...currentVehicle, make: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-on-surface-variant/80 font-bold uppercase">Model</label>
+                    <input
+                      className="form-input"
+                      type="text"
+                      required
+                      value={currentVehicle.model}
+                      onChange={(e) => setCurrentVehicle({ ...currentVehicle, model: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs text-on-surface-variant/80 font-bold uppercase">Vehicle Type</label>
+                    <select
+                      className="form-input bg-[#161616] text-on-surface"
+                      value={currentVehicle.type}
+                      onChange={(e) => setCurrentVehicle({ ...currentVehicle, type: e.target.value })}
+                    >
+                      <option value="Container">Container</option>
+                      <option value="Heavy Truck">Heavy Truck</option>
+                      <option value="Flatbed">Flatbed</option>
+                      <option value="Tanker">Tanker</option>
+                      <option value="Dumper">Dumper</option>
+                      <option value="Cargo Van">Cargo Van</option>
+                      <option value="Box Truck">Box Truck</option>
+                      <option value="Trailer">Trailer</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-on-surface-variant/80 font-bold uppercase">Max Capacity (kg)</label>
+                    <input
+                      className="form-input"
+                      type="number"
+                      required
+                      value={currentVehicle.capacity}
+                      onChange={(e) => setCurrentVehicle({ ...currentVehicle, capacity: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-on-surface-variant/80 font-bold uppercase">Last Service Date</label>
+                  <input
+                    className="form-input"
+                    type="date"
+                    required
+                    value={currentVehicle.lastServiceDate}
+                    onChange={(e) => setCurrentVehicle({ ...currentVehicle, lastServiceDate: e.target.value })}
+                  />
+                </div>
+                <div className="flex gap-3 justify-end pt-4 border-t border-[#2E2E2E]">
+                  <button
+                    type="button"
+                    onClick={() => setShowEditModal(false)}
+                    className="px-4 py-2 bg-transparent text-on-surface-variant hover:text-white text-sm font-semibold rounded cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-[#ff8a00] text-black text-sm font-bold rounded hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+                  >
+                    Apply Changes
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+      </main>
     </>
   );
 };

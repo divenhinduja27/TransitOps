@@ -3,11 +3,10 @@ import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
   const navigate = useNavigate();
-  const [role, setRole] = useState('manager');
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [remember, setRemember] = useState(false);
+  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const togglePassword = () => {
@@ -17,11 +16,18 @@ const Login = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate auth transition to dashboard
+    setError('');
+
     setTimeout(() => {
       setIsLoading(false);
-      navigate('/dashboard');
-    }, 1000);
+      if (username.trim() === 'admin' && password === 'pass') {
+        localStorage.setItem('token', 'mock-transitops-erp-token');
+        localStorage.setItem('user', JSON.stringify({ username: 'admin', role: 'Administrator' }));
+        navigate('/dashboard');
+      } else {
+        setError('Invalid username or password');
+      }
+    }, 800);
   };
 
   return (
@@ -81,43 +87,28 @@ const Login = () => {
 
         {/* Login Card */}
         <div className="login-card p-8 rounded-xl">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            {/* Role Selector (RBAC) */}
-            <div className="space-y-2">
-              <label className="block font-label-md text-label-md text-on-surface-variant" htmlFor="role">Access Level</label>
-              <div className="relative">
-                <select 
-                  className="input-field w-full h-12 px-4 rounded-lg font-body-md text-on-surface appearance-none cursor-pointer" 
-                  id="role" 
-                  name="role"
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                >
-                  <option value="manager">Manager</option>
-                  <option value="dispatcher">Dispatcher</option>
-                  <option value="driver">Driver</option>
-                  <option value="admin">System Administrator</option>
-                </select>
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">
-                  <span className="material-symbols-outlined text-[20px]">expand_more</span>
-                </div>
-              </div>
+          {error && (
+            <div className="mb-6 p-4 bg-error-container/30 border border-error/50 text-error rounded-lg flex items-center gap-3 text-sm">
+              <span className="material-symbols-outlined text-[20px]">error_outline</span>
+              <span>{error}</span>
             </div>
+          )}
 
-            {/* Email Field */}
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            {/* Username Field */}
             <div className="space-y-2">
-              <label className="block font-label-md text-label-md text-on-surface-variant" htmlFor="email">Corporate Email</label>
+              <label className="block font-label-md text-label-md text-on-surface-variant" htmlFor="username">Username</label>
               <div className="relative">
-                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">alternate_email</span>
+                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">person</span>
                 <input 
                   className="input-field w-full h-12 pl-12 pr-4 rounded-lg font-body-md text-on-surface placeholder:text-on-surface-variant/30" 
-                  id="email" 
-                  name="email" 
-                  placeholder="name@transitops.com" 
+                  id="username" 
+                  name="username" 
+                  placeholder="admin" 
                   required 
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                 />
               </div>
             </div>
@@ -126,7 +117,6 @@ const Login = () => {
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <label className="block font-label-md text-label-md text-on-surface-variant" htmlFor="password">Security Key</label>
-                <a className="font-label-sm text-label-sm text-[#ff8a00] hover:underline" href="#">Forgot?</a>
               </div>
               <div className="relative">
                 <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">lock</span>
@@ -148,21 +138,9 @@ const Login = () => {
               </div>
             </div>
 
-            {/* Remember Me */}
-            <div className="flex items-center gap-3">
-              <input 
-                className="w-4 h-4 rounded border-[#2E2E2E] bg-[#161616] text-[#ff8a00] focus:ring-0 focus:ring-offset-0" 
-                id="remember" 
-                type="checkbox"
-                checked={remember}
-                onChange={(e) => setRemember(e.target.checked)}
-              />
-              <label className="font-body-sm text-body-sm text-on-surface-variant select-none" htmlFor="remember">Stay logged in for 24 hours</label>
-            </div>
-
             {/* Submit Button */}
             <button 
-              className="btn-primary w-full h-12 rounded-lg font-title-md text-title-md text-black font-bold flex items-center justify-center gap-2 hover:opacity-90 active:opacity-100 transition-all disabled:opacity-80" 
+              className="btn-primary w-full h-12 rounded-lg font-title-md text-title-md text-black font-bold flex items-center justify-center gap-2 hover:opacity-90 active:opacity-100 transition-all disabled:opacity-80 cursor-pointer" 
               type="submit"
               disabled={isLoading}
             >
@@ -183,53 +161,9 @@ const Login = () => {
 
         {/* Footer Info */}
         <footer className="mt-8 text-center space-y-4">
-          <div className="flex items-center justify-center gap-6">
-            <a className="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors" href="#">Privacy Protocol</a>
-            <a className="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors" href="#">Terminal Support</a>
-          </div>
           <p className="font-label-sm text-label-sm text-on-surface-variant/40">TransitOps v4.2.0-stable | Logistics Command Infrastructure</p>
         </footer>
       </main>
-
-      {/* Side Decoration (Hidden on small screens) */}
-      <div className="hidden xl:block absolute right-12 top-1/2 -translate-y-1/2 w-80 space-y-6">
-        <div className="p-6 rounded-lg border border-[#2E2E2E] bg-[#1A1A1A]/50 backdrop-blur-sm">
-          <h3 className="font-title-md text-title-md text-[#ff8a00] mb-2 flex items-center gap-2">
-            <span className="material-symbols-outlined text-[20px]">verified_user</span>
-            System Status
-          </h3>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-body-sm text-on-surface-variant">Active Fleets</span>
-              <span className="text-body-sm font-bold text-on-surface">1,204</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-body-sm text-on-surface-variant">Nodes Online</span>
-              <span className="text-body-sm font-bold text-on-surface">99.98%</span>
-            </div>
-            <div className="w-full bg-[#111111] h-1 rounded-full mt-4 overflow-hidden">
-              <div className="bg-[#ff8a00] h-full w-4/5"></div>
-            </div>
-          </div>
-        </div>
-        <div className="p-6 rounded-lg border border-[#2E2E2E] bg-[#1A1A1A]/50 backdrop-blur-sm">
-          <h3 className="font-title-md text-title-md text-on-surface mb-2 flex items-center gap-2">
-            <span className="material-symbols-outlined text-[20px]">hub</span>
-            Global Network
-          </h3>
-          <div className="aspect-video w-full rounded bg-[#111111] overflow-hidden relative">
-            <div className="absolute inset-0 opacity-30 grayscale contrast-125">
-              <div className="w-full h-full bg-[#111111] flex items-center justify-center text-xs text-on-surface-variant/40 border border-[#2E2E2E]">Map Visualization</div>
-            </div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="flex flex-col items-center">
-                <span className="material-symbols-outlined text-[#ff8a00] animate-pulse text-[32px]">sensors</span>
-                <span className="font-label-sm text-label-sm mt-1 text-[#ff8a00]">SCANNING...</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

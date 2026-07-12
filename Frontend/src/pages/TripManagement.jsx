@@ -1,267 +1,330 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useERP } from '../context/ERPContext';
+import Header from '../components/Header';
 
 const TripManagement = () => {
+  const { vehicles, drivers, trips, createTrip, updateTripStatus } = useERP();
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    vehicleId: '',
+    driverId: '',
+    origin: '',
+    destination: '',
+    cargoWeight: '',
+    cost: '',
+    status: 'Draft'
+  });
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  // Dropdown options
+  const availableVehicles = vehicles.filter(v => v.status === 'Available');
+  const availableDrivers = drivers.filter(d => d.status === 'Available');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    if (!formData.vehicleId) {
+      setError('Please select a vehicle.');
+      return;
+    }
+    if (!formData.driverId) {
+      setError('Please select an available driver.');
+      return;
+    }
+
+    try {
+      const newTrip = createTrip(formData);
+      setSuccess(`Trip ${newTrip.tripId} successfully created & status set to ${newTrip.status}.`);
+      setFormData({
+        vehicleId: '',
+        driverId: '',
+        origin: '',
+        destination: '',
+        cargoWeight: '',
+        cost: '',
+        status: 'Draft'
+      });
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  // Find info helpers
+  const getVehicleInfo = (id) => vehicles.find(v => v.id === id);
+  const getDriverInfo = (id) => drivers.find(d => d.id === id);
+
+  const filteredTrips = trips.filter(t => {
+    const matchesSearch = 
+      t.tripId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.origin.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.destination.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
+  });
+
   return (
     <>
-      {/* Page Specific Styles */}
       <style>{`
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #111111;
-            color: #f3dfd1;
-            overflow-x: hidden;
+        .glass-card {
+            background: rgba(30, 30, 30, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid #2E2E2E;
         }
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        .form-input {
+            background-color: #161616;
+            border: 1px solid #2E2E2E;
+            color: #e6e1e2;
+            width: 100%;
+            height: 40px;
+            padding: 0 12px;
+            border-radius: 6px;
+            outline: none;
+            transition: border-color 0.2s;
         }
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 4px;
+        .form-input:focus {
+            border-color: #ff8a00;
         }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #1a1a1a;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #2e2e2e;
-            border-radius: 10px;
-        }
-        .trip-card-gradient {
-            background: linear-gradient(135deg, rgba(30, 30, 30, 1) 0%, rgba(26, 26, 26, 1) 100%);
-        }
-        .status-pill {
-            backdrop-filter: blur(4px);
-        }
-
       `}</style>
-      
-      <main className="flex-1 ml-[260px] min-h-screen flex flex-col">
 
-<header className="sticky top-0 z-40 w-full flex justify-between items-center px-6 py-4 bg-background/80 backdrop-blur-md border-b border-outline-variant">
-<div className="flex items-center gap-6">
-<h2 className="font-title-lg text-title-lg text-primary">Dispatch Board</h2>
-<div className="relative w-72">
-<span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
-<input className="w-full bg-surface-container-lowest border border-outline-variant rounded-full pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" placeholder="Search trips, drivers, or vehicles..." type="text"/>
-</div>
-</div>
-<div className="flex items-center gap-4">
-<button className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all">
-<span className="material-symbols-outlined">notifications</span>
-</button>
-<button className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all">
-<span className="material-symbols-outlined">help_outline</span>
-</button>
-<div className="h-8 w-[1px] bg-outline-variant mx-2"></div>
-<button className="bg-primary text-on-primary px-4 py-2 rounded-lg font-medium flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all">
-<span className="material-symbols-outlined text-[20px]">add</span>
-<span>New Trip</span>
-</button>
-</div>
-</header>
+      <main className="ml-[260px] min-h-screen flex flex-col bg-[#111111] text-[#e6e1e2]">
+        <Header 
+          title="Dispatch Board" 
+          subtitle="Deploy fleet assets, assign crew, and monitor active lines"
+          searchPlaceholder="Search trip boards by ID, depot..."
+          searchValue={searchQuery}
+          onSearchChange={(e) => setSearchQuery(e.target.value)}
+        />
 
-<div className="p-6 flex flex-col lg:flex-row gap-6 flex-1 overflow-hidden">
+        <div className="p-6 flex flex-col xl:flex-row gap-6 flex-grow">
+          {/* LEFT: Dispatch Form */}
+          <div className="xl:w-1/3 space-y-6">
+            <div className="glass-card p-6 rounded-xl border border-[#2E2E2E]">
+              <h3 className="text-base font-bold mb-6 pb-2 border-b border-[#2E2E2E] flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#ff8a00]">edit_document</span>
+                New Trip Dispatcher
+              </h3>
 
-<section className="lg:w-1/3 xl:w-1/4 flex flex-col gap-6">
-<div className="bg-surface-container-low border border-outline-variant rounded-xl p-6 shadow-xl">
-<h3 className="font-title-md text-title-md text-on-surface mb-6 flex items-center gap-2">
-<span className="material-symbols-outlined text-primary">edit_document</span>
-                        Trip Information
-                    </h3>
-<form className="space-y-5">
-<div className="space-y-1.5">
-<label className="text-xs font-semibold text-on-surface-variant uppercase">Origin</label>
-<div className="relative">
-<span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">location_on</span>
-<input className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg pl-9 pr-4 py-2.5 text-sm focus:ring-1 focus:ring-primary outline-none" type="text" defaultValue="San Francisco Terminal A"/>
-</div>
-</div>
-<div className="space-y-1.5">
-<label className="text-xs font-semibold text-on-surface-variant uppercase">Destination</label>
-<div className="relative">
-<span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">flag</span>
-<input className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg pl-9 pr-4 py-2.5 text-sm focus:ring-1 focus:ring-primary outline-none" placeholder="Enter destination..." type="text"/>
-</div>
-</div>
-<div className="grid grid-cols-2 gap-4">
-<div className="space-y-1.5">
-<label className="text-xs font-semibold text-on-surface-variant uppercase">Vehicle</label>
-<select className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2.5 text-sm focus:ring-1 focus:ring-primary outline-none appearance-none">
-<option>TRK-9021 (Volvo FH)</option>
-<option>TRK-4432 (Freightliner)</option>
-<option>VAN-1102 (Mercedes Sprinter)</option>
-</select>
-</div>
-<div className="space-y-1.5">
-<label className="text-xs font-semibold text-on-surface-variant uppercase">Driver</label>
-<select className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg px-3 py-2.5 text-sm focus:ring-1 focus:ring-primary outline-none appearance-none">
-<option>Marcus Chen</option>
-<option>Sarah Johnson</option>
-<option>David Miller</option>
-</select>
-</div>
-</div>
-<div className="space-y-1.5">
-<label className="text-xs font-semibold text-on-surface-variant uppercase">Schedule</label>
-<div className="relative">
-<span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">calendar_today</span>
-<input className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg pl-9 pr-4 py-2.5 text-sm focus:ring-1 focus:ring-primary outline-none text-on-surface" type="datetime-local"/>
-</div>
-</div>
-<div className="pt-4 flex gap-3">
-<button className="flex-1 px-4 py-3 border border-outline-variant rounded-lg font-semibold text-sm hover:bg-surface-container-high transition-all" type="button">Save Draft</button>
-<button className="flex-1 px-4 py-3 bg-primary-container text-on-primary-container rounded-lg font-bold text-sm shadow-lg hover:shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all" type="submit">Dispatch Trip</button>
-</div>
-</form>
-</div>
+              {error && (
+                <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg text-xs flex gap-2">
+                  <span className="material-symbols-outlined text-[16px]">error</span>
+                  <span>{error}</span>
+                </div>
+              )}
+              {success && (
+                <div className="mb-4 p-3 bg-green-500/10 border border-green-500/30 text-green-400 rounded-lg text-xs flex gap-2">
+                  <span className="material-symbols-outlined text-[16px]">check_circle</span>
+                  <span>{success}</span>
+                </div>
+              )}
 
-<div className="bg-gradient-to-br from-secondary-container/20 to-transparent border border-secondary-container/30 rounded-xl p-5">
-<h4 className="text-xs font-bold text-secondary uppercase mb-3 flex items-center justify-between">
-                        Efficiency Optimizer
-                        <span className="material-symbols-outlined text-sm">bolt</span>
-</h4>
-<p className="text-sm text-on-surface-variant leading-relaxed mb-4">Route optimization suggests 12% fuel savings by rerouting via I-80 due to current weather patterns.</p>
-<div className="flex items-center gap-2">
-<div className="h-2 flex-1 bg-surface-container rounded-full overflow-hidden">
-<div className="h-full bg-secondary w-3/4"></div>
-</div>
-<span className="text-xs font-bold text-secondary">75% Score</span>
-</div>
-</div>
-</section>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Vehicle Selection */}
+                <div className="space-y-1">
+                  <div className="flex justify-between">
+                    <label className="text-xs text-on-surface-variant font-bold uppercase">Assign Vehicle</label>
+                    <span className="text-[10px] text-green-500 font-bold">{availableVehicles.length} available</span>
+                  </div>
+                  <select
+                    className="form-input bg-[#161616]"
+                    required
+                    value={formData.vehicleId}
+                    onChange={(e) => setFormData({ ...formData, vehicleId: e.target.value })}
+                  >
+                    <option value="">-- Choose Available Vehicle --</option>
+                    {availableVehicles.map(v => (
+                      <option key={v.id} value={v.id}>
+                        {v.registrationNumber} ({v.make} - Cap: {v.capacity} kg)
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-<section className="flex-1 flex flex-col gap-4 overflow-hidden">
-<div className="flex items-center justify-between">
-<div className="flex gap-2">
-<button className="px-4 py-1.5 rounded-full bg-surface-container-high text-on-surface text-sm font-semibold border border-outline-variant">All Trips (24)</button>
-<button className="px-4 py-1.5 rounded-full text-on-surface-variant text-sm font-medium hover:bg-surface-container transition-all">Dispatched (12)</button>
-<button className="px-4 py-1.5 rounded-full text-on-surface-variant text-sm font-medium hover:bg-surface-container transition-all">Delayed (2)</button>
-</div>
-<div className="flex items-center gap-2 text-on-surface-variant">
-<span className="text-xs font-medium">Auto-refresh in 45s</span>
-<span className="material-symbols-outlined text-sm animate-spin">sync</span>
-</div>
-</div>
-<div className="flex-1 grid grid-cols-1 xl:grid-cols-2 gap-4 overflow-y-auto custom-scrollbar pr-2">
+                {/* Driver Selection */}
+                <div className="space-y-1">
+                  <div className="flex justify-between">
+                    <label className="text-xs text-on-surface-variant font-bold uppercase">Assign Driver</label>
+                    <span className="text-[10px] text-green-500 font-bold">{availableDrivers.length} available</span>
+                  </div>
+                  <select
+                    className="form-input bg-[#161616]"
+                    required
+                    value={formData.driverId}
+                    onChange={(e) => setFormData({ ...formData, driverId: e.target.value })}
+                  >
+                    <option value="">-- Choose Available Driver --</option>
+                    {availableDrivers.map(d => (
+                      <option key={d.id} value={d.id}>
+                        {d.name} (Lic Expiry: {d.licenseExpiry})
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-<div className="trip-card-gradient border border-outline-variant rounded-xl p-5 flex flex-col gap-4 group hover:border-primary/50 transition-all cursor-pointer relative overflow-hidden">
-<div className="absolute top-0 right-0 p-3">
-<span className="status-pill px-3 py-1 bg-secondary-container/40 text-secondary text-[10px] font-bold rounded-full border border-secondary/30 uppercase tracking-tighter">Dispatched</span>
-</div>
-<div className="flex gap-4">
-<div className="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center text-primary">
-<span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>local_shipping</span>
-</div>
-<div>
-<h4 className="font-title-md text-on-surface">#TRP-7729-OP</h4>
-<p className="text-xs text-on-surface-variant">Volvo VNL 860 • Marcus Chen</p>
-</div>
-</div>
-<div className="grid grid-cols-2 gap-6 relative">
-<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-[1px] bg-outline-variant"></div>
-<div className="space-y-1">
-<p className="text-[10px] uppercase font-bold text-on-surface-variant">Origin</p>
-<p className="text-sm font-semibold">Port of Seattle, WA</p>
-</div>
-<div className="space-y-1 text-right">
-<p className="text-[10px] uppercase font-bold text-on-surface-variant">Destination</p>
-<p className="text-sm font-semibold">Denver Depot, CO</p>
-</div>
-</div>
+                {/* Routing info */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs text-on-surface-variant font-bold uppercase">Origin</label>
+                    <input
+                      className="form-input"
+                      type="text"
+                      required
+                      placeholder="e.g. Mumbai Port"
+                      value={formData.origin}
+                      onChange={(e) => setFormData({ ...formData, origin: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-on-surface-variant font-bold uppercase">Destination</label>
+                    <input
+                      className="form-input"
+                      type="text"
+                      required
+                      placeholder="e.g. Pune Depot"
+                      value={formData.destination}
+                      onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
+                    />
+                  </div>
+                </div>
 
-<div className="space-y-2 pt-2">
-<div className="flex justify-between items-end">
-<span className="text-[10px] font-bold text-on-surface-variant uppercase">Live Status: En Route</span>
-<span className="text-xs font-bold text-primary">640 / 1,320 mi</span>
-</div>
-<div className="h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
-<div className="h-full bg-primary w-[48%] rounded-full shadow-[0_0_8px_rgba(255,183,127,0.4)]"></div>
-</div>
-<div className="flex justify-between text-[10px] font-medium text-on-surface-variant/60">
-<span>4:00 AM Departure</span>
-<span>ETA: Tomorrow 9:30 AM</span>
-</div>
-</div>
-</div>
+                {/* Weights & Budget */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs text-on-surface-variant font-bold uppercase">Cargo Weight (kg)</label>
+                    <input
+                      className="form-input"
+                      type="number"
+                      required
+                      placeholder="e.g. 15000"
+                      value={formData.cargoWeight}
+                      onChange={(e) => setFormData({ ...formData, cargoWeight: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-on-surface-variant font-bold uppercase">Trip Cost / Budget (₹)</label>
+                    <input
+                      className="form-input"
+                      type="number"
+                      required
+                      placeholder="e.g. 12000"
+                      value={formData.cost}
+                      onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
+                    />
+                  </div>
+                </div>
 
-<div className="bg-surface-container-lowest/50 border border-dashed border-outline-variant rounded-xl p-5 flex flex-col gap-4 opacity-75 hover:opacity-100 transition-all cursor-pointer">
-<div className="absolute top-0 right-0 p-3">
-<span className="status-pill px-3 py-1 bg-surface-variant text-on-surface-variant text-[10px] font-bold rounded-full border border-outline-variant uppercase tracking-tighter">Draft</span>
-</div>
-<div className="flex gap-4">
-<div className="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center text-on-surface-variant">
-<span className="material-symbols-outlined">pending_actions</span>
-</div>
-<div>
-<h4 className="font-title-md text-on-surface">#TRP-8801-OP</h4>
-<p className="text-xs text-on-surface-variant">Awaiting vehicle &amp; driver assignment</p>
-</div>
-</div>
-<div className="grid grid-cols-2 gap-6 relative">
-<div className="space-y-1">
-<p className="text-[10px] uppercase font-bold text-on-surface-variant">Origin</p>
-<p className="text-sm font-semibold">Austin Hub, TX</p>
-</div>
-<div className="space-y-1 text-right">
-<p className="text-[10px] uppercase font-bold text-on-surface-variant">Destination</p>
-<p className="text-sm font-semibold">Phoenix Warehouse, AZ</p>
-</div>
-</div>
-<div className="mt-2 flex gap-2">
-<button className="text-[11px] font-bold text-primary uppercase hover:underline">Complete Details</button>
-<span className="text-on-surface-variant opacity-40">•</span>
-<button className="text-[11px] font-bold text-error uppercase hover:underline">Cancel Trip</button>
-</div>
-</div>
+                <div className="space-y-1">
+                  <label className="text-xs text-on-surface-variant font-bold uppercase">Deployment Phase</label>
+                  <select
+                    className="form-input bg-[#161616]"
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  >
+                    <option value="Draft">Draft (Plan Mode)</option>
+                    <option value="Dispatched">Dispatched (Deploy Instantly)</option>
+                  </select>
+                </div>
 
-<div className="bg-surface-container-low/30 border border-outline-variant rounded-xl p-5 flex flex-col gap-4 opacity-80 hover:opacity-100 transition-all cursor-pointer relative">
-<div className="absolute top-0 right-0 p-3">
-<span className="status-pill px-3 py-1 bg-tertiary-container/20 text-tertiary text-[10px] font-bold rounded-full border border-tertiary/30 uppercase tracking-tighter">Completed</span>
-</div>
-<div className="flex gap-4">
-<div className="w-12 h-12 rounded-lg bg-surface-container-highest flex items-center justify-center text-tertiary">
-<span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>task_alt</span>
-</div>
-<div>
-<h4 className="font-title-md text-on-surface">#TRP-6612-OP</h4>
-<p className="text-xs text-on-surface-variant">Freightliner Cascadia • Sarah Johnson</p>
-</div>
-</div>
-<div className="grid grid-cols-2 gap-6">
-<div className="space-y-1">
-<p className="text-[10px] uppercase font-bold text-on-surface-variant">Delivered To</p>
-<p className="text-sm font-semibold">Chicago Logistics Ctr</p>
-</div>
-<div className="space-y-1 text-right">
-<p className="text-[10px] uppercase font-bold text-on-surface-variant">Fuel Efficiency</p>
-<p className="text-sm font-semibold text-tertiary">7.8 MPG (High)</p>
-</div>
-</div>
-</div>
+                <button
+                  type="submit"
+                  className="w-full h-11 bg-[#ff8a00] text-black font-bold rounded-lg hover:opacity-90 active:scale-98 transition-all pt-1 flex items-center justify-center gap-2 cursor-pointer mt-4"
+                >
+                  <span className="material-symbols-outlined text-[20px]">local_shipping</span>
+                  Initialize Command Line
+                </button>
+              </form>
+            </div>
+          </div>
 
-<div className="bg-error-container/10 border border-error/40 rounded-xl p-5 flex flex-col gap-4 group hover:border-error transition-all cursor-pointer relative overflow-hidden">
-<div className="absolute top-0 right-0 p-3">
-<span className="status-pill px-3 py-1 bg-error/20 text-error text-[10px] font-bold rounded-full border border-error/30 uppercase tracking-tighter">Delayed</span>
-</div>
-<div className="flex gap-4">
-<div className="w-12 h-12 rounded-lg bg-error-container/20 flex items-center justify-center text-error animate-pulse">
-<span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>warning</span>
-</div>
-<div>
-<h4 className="font-title-md text-on-surface">#TRP-5541-OP</h4>
-<p className="text-xs text-on-surface-variant">Peterbilt 579 • David Miller</p>
-</div>
-</div>
-<div className="space-y-1">
-<p className="text-xs text-error font-medium">Mechanical Alert: Cooling system pressure drop detected.</p>
-<div className="flex items-center gap-3 mt-2">
-<button className="bg-error text-white text-[10px] font-bold px-3 py-1 rounded hover:bg-error/80 transition-all uppercase">Emergency Dispatch</button>
-<button className="text-[10px] font-bold text-on-surface-variant uppercase hover:text-on-surface">Contact Driver</button>
-</div>
-</div>
-</div>
-</div>
-</section>
-</div>
-</main>
+          {/* RIGHT: Trip Roster */}
+          <div className="flex-grow space-y-4">
+            <div className="glass-card p-6 rounded-xl border border-[#2E2E2E] flex flex-col h-full">
+              <h3 className="text-base font-bold mb-4 pb-2 border-b border-[#2E2E2E] flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#ff8a00]">list_alt</span>
+                Dispatched Routes & Manifests
+              </h3>
+
+              <div className="space-y-4 overflow-y-auto max-h-[600px] pr-2">
+                {filteredTrips.length === 0 ? (
+                  <p className="text-center py-12 text-on-surface-variant/40">No dispatch manifests logged.</p>
+                ) : (
+                  filteredTrips.map(trip => {
+                    const vehicle = getVehicleInfo(trip.vehicleId);
+                    const driver = getDriverInfo(trip.driverId);
+                    return (
+                      <div key={trip.id} className="bg-[#1A1A1A]/70 border border-[#2E2E2E] p-4 rounded-lg flex flex-col sm:flex-row justify-between gap-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs font-mono font-bold text-primary">{trip.tripId}</span>
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${
+                              trip.status === 'Completed' ? 'bg-green-500/10 text-green-400 border border-green-500/30' :
+                              trip.status === 'Dispatched' ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30' :
+                              trip.status === 'Cancelled' ? 'bg-red-500/10 text-red-400 border border-red-500/30' :
+                              'bg-yellow-500/10 text-yellow-400 border border-yellow-500/30'
+                            }`}>
+                              {trip.status}
+                            </span>
+                          </div>
+                          <div className="text-sm font-semibold">
+                            {trip.origin} → {trip.destination}
+                          </div>
+                          <div className="grid grid-cols-2 gap-x-6 text-xs text-on-surface-variant/80">
+                            <div>
+                              <span className="font-bold">Truck:</span> {vehicle ? vehicle.registrationNumber : trip.vehicleId} ({vehicle?.make})
+                            </div>
+                            <div>
+                              <span className="font-bold">Operator:</span> {driver ? driver.name : trip.driverId}
+                            </div>
+                            <div>
+                              <span className="font-bold">Cargo:</span> {trip.cargoWeight} kg
+                            </div>
+                            <div>
+                              <span className="font-bold">Date:</span> {trip.startDate || 'Draft Phase'} {trip.endDate && `to ${trip.endDate}`}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-row sm:flex-col justify-end items-center sm:items-end gap-2">
+                          <span className="text-sm font-mono font-bold text-[#ff8a00] mb-0 sm:mb-2">₹{trip.cost.toLocaleString()}</span>
+                          <div className="flex gap-2">
+                            {trip.status === 'Draft' && (
+                              <button
+                                onClick={() => updateTripStatus(trip.id, 'Dispatched')}
+                                className="bg-[#ff8a00] text-black px-3 py-1 rounded text-xs font-bold hover:opacity-90 transition-all cursor-pointer"
+                              >
+                                Dispatch
+                              </button>
+                            )}
+                            {trip.status === 'Dispatched' && (
+                              <>
+                                <button
+                                  onClick={() => updateTripStatus(trip.id, 'Completed')}
+                                  className="bg-green-500/20 text-green-400 border border-green-500/30 px-3 py-1 rounded text-xs font-bold hover:bg-green-500/30 transition-all cursor-pointer"
+                                >
+                                  Complete
+                                </button>
+                                <button
+                                  onClick={() => updateTripStatus(trip.id, 'Cancelled')}
+                                  className="bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1 rounded text-xs font-bold hover:bg-red-500/30 transition-all cursor-pointer"
+                                >
+                                  Cancel
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
     </>
   );
 };

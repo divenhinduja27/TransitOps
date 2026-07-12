@@ -1,14 +1,11 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 // Layouts
-import MainLayout from './layouts/MainLayout';
 import AuthLayout from './layouts/AuthLayout';
 import ERPLayout from './layouts/ERPLayout';
 
 // Pages
-import Home from './pages/Home';
 import Login from './pages/Login';
-import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import TripManagement from './pages/TripManagement';
 import VehicleRegistry from './pages/VehicleRegistry';
@@ -19,35 +16,41 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import NotFound from './pages/NotFound';
 
+// Components & Providers
+import ProtectedRoute from './components/ProtectedRoute';
+import { ERPProvider } from './context/ERPContext';
+
 function App() {
   return (
-    <Router>
-      <Routes>
-        {/* Public pages with Navbar + Footer */}
-        <Route element={<MainLayout />}>
-          <Route path="/" element={<Home />} />
+    <ERPProvider>
+      <Router>
+        <Routes>
+          {/* Redirect root to /dashboard (which redirects to /login if unauthenticated) */}
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+          {/* Auth pages (no Sidebar) */}
+          <Route element={<AuthLayout />}>
+            <Route path="/login" element={<Login />} />
+          </Route>
+
+          {/* Protected ERP pages with Sidebar */}
+          <Route element={<ProtectedRoute />}>
+            <Route element={<ERPLayout />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/fleet" element={<VehicleRegistry />} />
+              <Route path="/drivers" element={<DriverManagement />} />
+              <Route path="/trips" element={<TripManagement />} />
+              <Route path="/maintenance" element={<Maintenance />} />
+              <Route path="/fuel-expenses" element={<FuelExpenses />} />
+              <Route path="/analytics" element={<Reports />} />
+              <Route path="/settings" element={<Settings />} />
+            </Route>
+          </Route>
+
           <Route path="*" element={<NotFound />} />
-        </Route>
-
-        {/* Auth pages (no Navbar/Footer) */}
-        <Route element={<AuthLayout />}>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-        </Route>
-
-        {/* ERP pages with Sidebar */}
-        <Route element={<ERPLayout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/fleet" element={<VehicleRegistry />} />
-          <Route path="/drivers" element={<DriverManagement />} />
-          <Route path="/trips" element={<TripManagement />} />
-          <Route path="/maintenance" element={<Maintenance />} />
-          <Route path="/fuel-expenses" element={<FuelExpenses />} />
-          <Route path="/analytics" element={<Reports />} />
-          <Route path="/settings" element={<Settings />} />
-        </Route>
-      </Routes>
-    </Router>
+        </Routes>
+      </Router>
+    </ERPProvider>
   );
 }
 

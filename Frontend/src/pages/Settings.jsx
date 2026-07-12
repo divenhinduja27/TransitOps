@@ -1,364 +1,290 @@
-import React from 'react';
+import React, { useState } from 'react';
+import Header from '../components/Header';
 
 const Settings = () => {
+  // Mock Settings States
+  const [notifications, setNotifications] = useState({
+    smsAlerts: true,
+    emailSummaries: false,
+    maintenanceAlarms: true,
+    tripUpdates: true
+  });
+
+  const [departments, setDepartments] = useState({
+    dispatchHubName: 'Region A-12 Control Center',
+    primaryTimezone: 'Asia/Kolkata (IST)',
+    maxHoursPerShift: '12',
+    enableAutoRerouting: true
+  });
+
+  const [permissions, setPermissions] = useState([
+    { role: 'Administrator', read: true, write: true, delete: true, dispatch: true },
+    { role: 'Manager', read: true, write: true, delete: false, dispatch: true },
+    { role: 'Dispatcher', read: true, write: false, delete: false, dispatch: true },
+    { role: 'Driver', read: true, write: false, delete: false, dispatch: false }
+  ]);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+
+  const handleSave = (e) => {
+    e.preventDefault();
+    setSuccessMsg('Configurations successfully committed to database.');
+    setTimeout(() => setSuccessMsg(''), 3000);
+  };
+
+  const handleTogglePermission = (index, field) => {
+    setPermissions(prev => prev.map((p, idx) => 
+      idx === index ? { ...p, [field]: !p[field] } : p
+    ));
+  };
+
   return (
     <>
-      {/* Page Specific Styles */}
       <style>{`
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        .glass-card {
+            background: rgba(30, 30, 30, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid #2E2E2E;
         }
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
+        .form-input {
+            background-color: #161616;
+            border: 1px solid #2E2E2E;
+            color: #e6e1e2;
+            width: 100%;
+            height: 40px;
+            padding: 0 12px;
+            border-radius: 6px;
+            outline: none;
+            transition: border-color 0.2s;
         }
-        ::-webkit-scrollbar-track {
-            background: #1b110a;
+        .form-input:focus {
+            border-color: #ff8a00;
         }
-        ::-webkit-scrollbar-thumb {
-            background: #3f3229;
-            border-radius: 3px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #564334;
-        }
-        .bento-card {
-            background: #1e1e1e;
-            border: 1px solid #2e2e2e;
-            transition: all 0.2s ease;
-        }
-
       `}</style>
-      
-      <main className="ml-[260px] min-h-screen flex flex-col relative">
 
-<header className="sticky top-0 z-40 bg-background border-b border-outline-variant flex justify-between items-center w-full px-6 py-4">
-<div className="flex items-center gap-4 flex-1">
-<div className="relative w-full max-w-md">
-<span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
-<input className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg py-2 pl-10 pr-4 text-body-md focus:outline-none focus:border-primary transition-colors" placeholder="Search settings, users, or permissions..." type="text"/>
-</div>
-</div>
-<div className="flex items-center gap-6">
-<div className="flex items-center gap-4 text-on-surface-variant">
-<button className="hover:bg-surface-container-highest p-2 rounded-full transition-all">
-<span className="material-symbols-outlined">notifications</span>
-</button>
-<button className="hover:bg-surface-container-highest p-2 rounded-full transition-all">
-<span className="material-symbols-outlined">help_outline</span>
-</button>
-</div>
-<div className="flex items-center gap-3 pl-6 border-l border-outline-variant">
-<img className="w-9 h-9 rounded-full object-cover border border-primary" data-alt="A professional portrait of a senior logistics administrator, a middle-aged woman with glasses and a friendly, authoritative expression, wearing a dark navy blazer, set against a blurred modern office background with soft orange lighting accents to match the TransitOps brand identity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCRyk0uFyOJEJYeZD_xfKjIqR3vquE4-Fgva_7aoODF_EVowCmjLJ8IjRuJHJG9QK7AeWHgFOukMcyVPKCvSOsYkJMIVyyxFUGEhVXU3H-rGiEkOr-GLkk9CGQQDEDemK554NIMpKAEPSW2wZU8D11F7wfCBLipVOdEmk_cX75HHnCsFwtzpMkZK8lSG1A5yLRyo34NdwSFDwtsdbM-Yx8RLM1t_Yh_jw_sSCKU_VmNPOJBnHkZxWF-Ww"/>
-<div className="hidden lg:block">
-<p className="text-label-md text-on-surface font-bold leading-tight">Elena Vance</p>
-<p className="text-[10px] text-on-surface-variant uppercase tracking-tighter">System Administrator</p>
-</div>
-</div>
-</div>
-</header>
+      <main className="ml-[260px] min-h-screen flex flex-col bg-[#111111] text-[#e6e1e2]">
+        <Header 
+          title="Command Settings" 
+          subtitle="Configure system permissions, alerts protocols, and regional depots"
+          searchPlaceholder="Search system config keys..."
+          searchValue={searchQuery}
+          onSearchChange={(e) => setSearchQuery(e.target.value)}
+        />
 
-<section className="p-6 lg:p-8 flex-1 max-w-7xl mx-auto w-full">
-<div className="mb-8 flex justify-between items-end">
-<div>
-<h2 className="font-headline-lg text-headline-lg text-on-surface mb-1">System Settings</h2>
-<p className="text-body-md text-on-surface-variant">Configure enterprise preferences and manage role-based access control.</p>
-</div>
-<button className="bg-primary-container text-on-primary-fixed px-6 py-2.5 rounded-lg font-bold flex items-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all">
-<span className="material-symbols-outlined">save</span>
-                    Save Changes
-                </button>
-</div>
-<div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <form onSubmit={handleSave} className="p-6 space-y-6 flex-grow">
+          {successMsg && (
+            <div className="p-4 bg-green-500/10 border border-green-500/30 text-green-400 rounded-lg text-sm flex items-center gap-3">
+              <span className="material-symbols-outlined">check_circle</span>
+              <span>{successMsg}</span>
+            </div>
+          )}
 
-<div className="xl:col-span-1 space-y-6">
-<div className="bento-card p-6 rounded-xl">
-<div className="flex items-center gap-3 mb-6">
-<span className="material-symbols-outlined text-primary">language</span>
-<h3 className="font-title-lg text-title-lg">Regional Settings</h3>
-</div>
-<div className="space-y-4">
-<div>
-<label className="block text-label-md text-on-surface-variant mb-1.5">System Timezone</label>
-<select className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg py-2.5 px-3 text-body-md focus:border-primary outline-none">
-<option>UTC -05:00 Eastern Time (US &amp; Canada)</option>
-<option>UTC +00:00 Greenwich Mean Time</option>
-<option>UTC +01:00 Central European Time</option>
-<option>UTC +08:00 Singapore Standard Time</option>
-</select>
-</div>
-<div>
-<label className="block text-label-md text-on-surface-variant mb-1.5">Date Format</label>
-<select className="w-full bg-surface-container-lowest border border-outline-variant rounded-lg py-2.5 px-3 text-body-md focus:border-primary outline-none">
-<option>MM/DD/YYYY</option>
-<option>DD/MM/YYYY</option>
-<option>YYYY-MM-DD</option>
-</select>
-</div>
-<div>
-<label className="block text-label-md text-on-surface-variant mb-1.5">Units of Measurement</label>
-<div className="grid grid-cols-2 gap-2">
-<button className="bg-primary text-on-primary py-2 rounded-lg text-label-md font-bold">Imperial (mi, gal)</button>
-<button className="bg-surface-container-lowest border border-outline-variant text-on-surface-variant py-2 rounded-lg text-label-md font-bold hover:border-outline transition-colors">Metric (km, L)</button>
-</div>
-</div>
-</div>
-</div>
-<div className="bento-card p-6 rounded-xl">
-<div className="flex items-center gap-3 mb-6">
-<span className="material-symbols-outlined text-primary">notifications_active</span>
-<h3 className="font-title-lg text-title-lg">Global Notifications</h3>
-</div>
-<div className="space-y-4">
-<div className="flex items-center justify-between p-3 bg-surface-container-lowest rounded-lg border border-outline-variant/30">
-<div>
-<p className="font-bold text-on-surface">Emergency Alerts</p>
-<p className="text-xs text-on-surface-variant">SMS &amp; Push for breakdown/safety events</p>
-</div>
-<label className="relative inline-flex items-center cursor-pointer">
-<input defaultChecked="" className="sr-only peer" type="checkbox"/>
-<div className="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-</label>
-</div>
-<div className="flex items-center justify-between p-3 bg-surface-container-lowest rounded-lg border border-outline-variant/30">
-<div>
-<p className="font-bold text-on-surface">Maintenance Reminders</p>
-<p className="text-xs text-on-surface-variant">Weekly fleet health email digest</p>
-</div>
-<label className="relative inline-flex items-center cursor-pointer">
-<input defaultChecked="" className="sr-only peer" type="checkbox"/>
-<div className="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-</label>
-</div>
-<div className="flex items-center justify-between p-3 bg-surface-container-lowest rounded-lg border border-outline-variant/30">
-<div>
-<p className="font-bold text-on-surface">Financial Reports</p>
-<p className="text-xs text-on-surface-variant">Notify when fuel invoices are uploaded</p>
-</div>
-<label className="relative inline-flex items-center cursor-pointer">
-<input className="sr-only peer" type="checkbox"/>
-<div className="w-11 h-6 bg-surface-container-highest peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-</label>
-</div>
-</div>
-</div>
-</div>
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            {/* RBAC Table */}
+            <div className="glass-card p-6 rounded-xl border border-[#2E2E2E] space-y-4">
+              <h3 className="text-base font-bold border-b border-[#2E2E2E] pb-3 flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#ff8a00]">admin_panel_settings</span>
+                Role-Based Access Control (RBAC)
+              </h3>
+              <p className="text-xs text-on-surface-variant/80">Configure authorization policy parameters across operational groups.</p>
+              
+              <div className="overflow-x-auto pt-2">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-[#2E2E2E] text-on-surface-variant/60 text-xs font-bold uppercase">
+                      <th className="py-2 px-1">Role</th>
+                      <th className="py-2 text-center">Read</th>
+                      <th className="py-2 text-center">Write</th>
+                      <th className="py-2 text-center">Delete</th>
+                      <th className="py-2 text-center">Dispatch</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#2E2E2E]/40">
+                    {permissions.map((p, idx) => (
+                      <tr key={p.role} className="hover:bg-[#1E1E1E]/40 transition-colors">
+                        <td className="py-3 px-1 font-semibold">{p.role}</td>
+                        <td className="py-3 text-center">
+                          <input 
+                            type="checkbox" 
+                            checked={p.read} 
+                            onChange={() => handleTogglePermission(idx, 'read')}
+                            className="w-4 h-4 rounded border-[#2E2E2E] bg-[#161616] text-[#ff8a00] focus:ring-0" 
+                          />
+                        </td>
+                        <td className="py-3 text-center">
+                          <input 
+                            type="checkbox" 
+                            checked={p.write} 
+                            onChange={() => handleTogglePermission(idx, 'write')}
+                            className="w-4 h-4 rounded border-[#2E2E2E] bg-[#161616] text-[#ff8a00] focus:ring-0" 
+                          />
+                        </td>
+                        <td className="py-3 text-center">
+                          <input 
+                            type="checkbox" 
+                            checked={p.delete} 
+                            disabled={p.role === 'Administrator'}
+                            onChange={() => handleTogglePermission(idx, 'delete')}
+                            className="w-4 h-4 rounded border-[#2E2E2E] bg-[#161616] text-[#ff8a00] focus:ring-0 disabled:opacity-30" 
+                          />
+                        </td>
+                        <td className="py-3 text-center">
+                          <input 
+                            type="checkbox" 
+                            checked={p.dispatch} 
+                            onChange={() => handleTogglePermission(idx, 'dispatch')}
+                            className="w-4 h-4 rounded border-[#2E2E2E] bg-[#161616] text-[#ff8a00] focus:ring-0" 
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
 
-<div className="xl:col-span-2">
-<div className="bento-card rounded-xl flex flex-col h-full overflow-hidden">
-<div className="p-6 border-b border-outline-variant bg-surface-container-low/50">
-<div className="flex items-center justify-between">
-<div className="flex items-center gap-3">
-<span className="material-symbols-outlined text-primary">security</span>
-<div>
-<h3 className="font-title-lg text-title-lg">RBAC Permission Matrix</h3>
-<p className="text-body-sm text-on-surface-variant">Define module access levels by organizational role.</p>
-</div>
-</div>
-<button className="flex items-center gap-2 text-label-md font-bold text-primary hover:underline">
-<span className="material-symbols-outlined text-[18px]">add</span>
-                                    Custom Role
-                                </button>
-</div>
-</div>
-<div className="overflow-x-auto">
-<table className="w-full text-left border-collapse">
-<thead>
-<tr className="bg-surface-container-lowest">
-<th className="px-6 py-4 text-label-md font-bold text-on-surface-variant uppercase tracking-wider">Module</th>
-<th className="px-6 py-4 text-center">
-<div className="flex flex-col items-center">
-<span className="text-label-md font-extrabold text-primary">Fleet Manager</span>
-<span className="text-[10px] text-on-surface-variant font-medium">L3 Admin</span>
-</div>
-</th>
-<th className="px-6 py-4 text-center">
-<div className="flex flex-col items-center">
-<span className="text-label-md font-extrabold text-on-surface">Dispatcher</span>
-<span className="text-[10px] text-on-surface-variant font-medium">L2 Operations</span>
-</div>
-</th>
-<th className="px-6 py-4 text-center">
-<div className="flex flex-col items-center">
-<span className="text-label-md font-extrabold text-on-surface">Safety Officer</span>
-<span className="text-[10px] text-on-surface-variant font-medium">L2 Audit</span>
-</div>
-</th>
-<th className="px-6 py-4 text-center">
-<div className="flex flex-col items-center">
-<span className="text-label-md font-extrabold text-on-surface">Financial Analyst</span>
-<span className="text-[10px] text-on-surface-variant font-medium">L1 Viewer</span>
-</div>
-</th>
-</tr>
-</thead>
-<tbody className="divide-y divide-outline-variant/30">
+            {/* Department Settings */}
+            <div className="glass-card p-6 rounded-xl border border-[#2E2E2E] space-y-4">
+              <h3 className="text-base font-bold border-b border-[#2E2E2E] pb-3 flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#ff8a00]">business</span>
+                Department & Regional Node Settings
+              </h3>
+              
+              <div className="space-y-4 pt-2">
+                <div className="space-y-1">
+                  <label className="text-xs text-on-surface-variant font-bold uppercase">Dispatch Hub Name</label>
+                  <input
+                    className="form-input"
+                    type="text"
+                    required
+                    value={departments.dispatchHubName}
+                    onChange={(e) => setDepartments({ ...departments, dispatchHubName: e.target.value })}
+                  />
+                </div>
 
-<tr className="hover:bg-surface-container-high/40 transition-colors">
-<td className="px-6 py-5">
-<div className="flex items-center gap-3">
-<span className="material-symbols-outlined text-on-surface-variant">local_shipping</span>
-<span className="font-bold">Fleet Management</span>
-</div>
-</td>
-<td className="px-6 py-5 text-center">
-<input defaultChecked="" className="w-5 h-5 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary-container" type="checkbox"/>
-</td>
-<td className="px-6 py-5 text-center">
-<input defaultChecked="" className="w-5 h-5 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary-container" type="checkbox"/>
-</td>
-<td className="px-6 py-5 text-center">
-<input defaultChecked="" className="w-5 h-5 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary-container" type="checkbox"/>
-</td>
-<td className="px-6 py-5 text-center">
-<input className="w-5 h-5 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary-container" type="checkbox"/>
-</td>
-</tr>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs text-on-surface-variant font-bold uppercase">Primary Timezone</label>
+                    <select
+                      className="form-input bg-[#161616]"
+                      value={departments.primaryTimezone}
+                      onChange={(e) => setDepartments({ ...departments, primaryTimezone: e.target.value })}
+                    >
+                      <option value="Asia/Kolkata (IST)">Asia/Kolkata (IST)</option>
+                      <option value="UTC/GMT">UTC/GMT</option>
+                      <option value="US/Eastern">US/Eastern</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-on-surface-variant font-bold uppercase">Max Shift Length (hours)</label>
+                    <input
+                      className="form-input"
+                      type="number"
+                      required
+                      value={departments.maxHoursPerShift}
+                      onChange={(e) => setDepartments({ ...departments, maxHoursPerShift: e.target.value })}
+                    />
+                  </div>
+                </div>
 
-<tr className="hover:bg-surface-container-high/40 transition-colors">
-<td className="px-6 py-5">
-<div className="flex items-center gap-3">
-<span className="material-symbols-outlined text-on-surface-variant">person_pin_circle</span>
-<span className="font-bold">Driver Database</span>
-</div>
-</td>
-<td className="px-6 py-5 text-center">
-<input defaultChecked="" className="w-5 h-5 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary-container" type="checkbox"/>
-</td>
-<td className="px-6 py-5 text-center">
-<input defaultChecked="" className="w-5 h-5 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary-container" type="checkbox"/>
-</td>
-<td className="px-6 py-5 text-center">
-<input defaultChecked="" className="w-5 h-5 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary-container" type="checkbox"/>
-</td>
-<td className="px-6 py-5 text-center">
-<input className="w-5 h-5 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary-container" type="checkbox"/>
-</td>
-</tr>
+                <div className="flex items-center gap-3 pt-2">
+                  <input
+                    id="autoReroute"
+                    type="checkbox"
+                    checked={departments.enableAutoRerouting}
+                    onChange={(e) => setDepartments({ ...departments, enableAutoRerouting: e.target.checked })}
+                    className="w-4 h-4 rounded border-[#2E2E2E] bg-[#161616] text-[#ff8a00] focus:ring-0"
+                  />
+                  <label htmlFor="autoReroute" className="text-xs text-on-surface select-none">
+                    Enable Autonomous Emergency Rerouting Protocols
+                  </label>
+                </div>
+              </div>
+            </div>
 
-<tr className="hover:bg-surface-container-high/40 transition-colors">
-<td className="px-6 py-5">
-<div className="flex items-center gap-3">
-<span className="material-symbols-outlined text-on-surface-variant">route</span>
-<span className="font-bold">Trip Dispatch</span>
-</div>
-</td>
-<td className="px-6 py-5 text-center">
-<input defaultChecked="" className="w-5 h-5 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary-container" type="checkbox"/>
-</td>
-<td className="px-6 py-5 text-center">
-<input defaultChecked="" className="w-5 h-5 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary-container" type="checkbox"/>
-</td>
-<td className="px-6 py-5 text-center">
-<input className="w-5 h-5 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary-container" type="checkbox"/>
-</td>
-<td className="px-6 py-5 text-center">
-<input className="w-5 h-5 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary-container" type="checkbox"/>
-</td>
-</tr>
+            {/* Notification settings */}
+            <div className="glass-card p-6 rounded-xl border border-[#2E2E2E] space-y-4">
+              <h3 className="text-base font-bold border-b border-[#2E2E2E] pb-3 flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#ff8a00]">notifications_active</span>
+                Automated Alert Summaries & Notifications
+              </h3>
+              <p className="text-xs text-on-surface-variant/80">Configure alert routing logic for dispatch pipelines.</p>
 
-<tr className="hover:bg-surface-container-high/40 transition-colors">
-<td className="px-6 py-5">
-<div className="flex items-center gap-3">
-<span className="material-symbols-outlined text-on-surface-variant">build</span>
-<span className="font-bold">Maintenance Logs</span>
-</div>
-</td>
-<td className="px-6 py-5 text-center">
-<input defaultChecked="" className="w-5 h-5 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary-container" type="checkbox"/>
-</td>
-<td className="px-6 py-5 text-center">
-<input className="w-5 h-5 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary-container" type="checkbox"/>
-</td>
-<td className="px-6 py-5 text-center">
-<input defaultChecked="" className="w-5 h-5 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary-container" type="checkbox"/>
-</td>
-<td className="px-6 py-5 text-center">
-<input className="w-5 h-5 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary-container" type="checkbox"/>
-</td>
-</tr>
+              <div className="space-y-4 pt-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-sm font-semibold text-on-surface">SMS Critical Alerts</label>
+                    <p className="text-[10px] text-on-surface-variant/80">Ping dispatch operators on driver license expiry/suspension.</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={notifications.smsAlerts}
+                    onChange={(e) => setNotifications({ ...notifications, smsAlerts: e.target.checked })}
+                    className="w-4 h-4 rounded border-[#2E2E2E] bg-[#161616] text-[#ff8a00] focus:ring-0"
+                  />
+                </div>
 
-<tr className="hover:bg-surface-container-high/40 transition-colors">
-<td className="px-6 py-5">
-<div className="flex items-center gap-3">
-<span className="material-symbols-outlined text-on-surface-variant">payments</span>
-<span className="font-bold">Financials &amp; Fuel</span>
-</div>
-</td>
-<td className="px-6 py-5 text-center">
-<input defaultChecked="" className="w-5 h-5 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary-container" type="checkbox"/>
-</td>
-<td className="px-6 py-5 text-center">
-<input className="w-5 h-5 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary-container" type="checkbox"/>
-</td>
-<td className="px-6 py-5 text-center">
-<input className="w-5 h-5 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary-container" type="checkbox"/>
-</td>
-<td className="px-6 py-5 text-center">
-<input defaultChecked="" className="w-5 h-5 rounded border-outline-variant bg-surface-container-lowest text-primary-container focus:ring-primary-container" type="checkbox"/>
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-<div className="mt-auto p-6 bg-surface-container-lowest flex items-center justify-between border-t border-outline-variant/30">
-<div className="flex items-center gap-2 text-xs text-on-surface-variant italic">
-<span className="material-symbols-outlined text-[14px]">info</span>
-                                Settings updated 2 hours ago by admin_elena
-                            </div>
-<div className="flex gap-4">
-<button className="text-label-md font-bold text-on-surface-variant hover:text-on-surface transition-colors">Discard Draft</button>
-<button className="text-label-md font-bold text-primary hover:opacity-80 transition-opacity">Export RBAC Schema</button>
-</div>
-</div>
-</div>
-</div>
-</div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-sm font-semibold text-on-surface">Email Summaries</label>
+                    <p className="text-[10px] text-on-surface-variant/80">Send daily fuel opex and maintenance status logs.</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={notifications.emailSummaries}
+                    onChange={(e) => setNotifications({ ...notifications, emailSummaries: e.target.checked })}
+                    className="w-4 h-4 rounded border-[#2E2E2E] bg-[#161616] text-[#ff8a00] focus:ring-0"
+                  />
+                </div>
 
-<div className="mt-8 grid grid-cols-1 md:grid-cols-4 gap-4">
-<div className="bg-surface-container p-4 rounded-lg border border-outline-variant/30 flex items-center gap-4">
-<div className="w-10 h-10 rounded-full bg-secondary-container/20 flex items-center justify-center">
-<span className="material-symbols-outlined text-secondary text-[20px]">group</span>
-</div>
-<div>
-<p className="text-[10px] uppercase tracking-wider text-on-surface-variant">Active Users</p>
-<p className="text-title-md font-bold">128</p>
-</div>
-</div>
-<div className="bg-surface-container p-4 rounded-lg border border-outline-variant/30 flex items-center gap-4">
-<div className="w-10 h-10 rounded-full bg-tertiary-container/20 flex items-center justify-center">
-<span className="material-symbols-outlined text-tertiary text-[20px]">vpn_key</span>
-</div>
-<div>
-<p className="text-[10px] uppercase tracking-wider text-on-surface-variant">Active API Keys</p>
-<p className="text-title-md font-bold">14</p>
-</div>
-</div>
-<div className="bg-surface-container p-4 rounded-lg border border-outline-variant/30 flex items-center gap-4">
-<div className="w-10 h-10 rounded-full bg-error-container/20 flex items-center justify-center">
-<span className="material-symbols-outlined text-error text-[20px]">event_busy</span>
-</div>
-<div>
-<p className="text-[10px] uppercase tracking-wider text-on-surface-variant">Pending Revocations</p>
-<p className="text-title-md font-bold">0</p>
-</div>
-</div>
-<div className="bg-surface-container p-4 rounded-lg border border-outline-variant/30 flex items-center gap-4">
-<div className="w-10 h-10 rounded-full bg-primary-container/20 flex items-center justify-center">
-<span className="material-symbols-outlined text-primary text-[20px]">sync</span>
-</div>
-<div>
-<p className="text-[10px] uppercase tracking-wider text-on-surface-variant">Last Sync</p>
-<p className="text-title-md font-bold">4m ago</p>
-</div>
-</div>
-</div>
-</section>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-sm font-semibold text-on-surface">Maintenance Alarms</label>
+                    <p className="text-[10px] text-on-surface-variant/80">Flag vehicles that exceed 30 days without safety inspections.</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={notifications.maintenanceAlarms}
+                    onChange={(e) => setNotifications({ ...notifications, maintenanceAlarms: e.target.checked })}
+                    className="w-4 h-4 rounded border-[#2E2E2E] bg-[#161616] text-[#ff8a00] focus:ring-0"
+                  />
+                </div>
 
-<div className="absolute bottom-4 right-4 pointer-events-none opacity-10">
-<span className="font-display-lg text-[120px] select-none text-primary font-extrabold leading-none">RBAC</span>
-</div>
-</main>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-sm font-semibold text-on-surface">Real-time Trip Updates</label>
+                    <p className="text-[10px] text-on-surface-variant/80">Push web notification when a route changes phase.</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={notifications.tripUpdates}
+                    onChange={(e) => setNotifications({ ...notifications, tripUpdates: e.target.checked })}
+                    className="w-4 h-4 rounded border-[#2E2E2E] bg-[#161616] text-[#ff8a00] focus:ring-0"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            {/* Save Options */}
+            <div className="glass-card p-6 rounded-xl border border-[#2E2E2E] flex flex-col justify-center items-center text-center space-y-4">
+              <span className="material-symbols-outlined text-[48px] text-[#ff8a00] animate-pulse">settings</span>
+              <div>
+                <h4 className="font-bold text-sm">Save Console Settings</h4>
+                <p className="text-xs text-on-surface-variant/80 max-w-xs mt-1">
+                  Commit and deploy system changes across the local and remote logistics dispatch network.
+                </p>
+              </div>
+              <button
+                type="submit"
+                className="bg-[#ff8a00] text-black px-6 py-2.5 rounded-full font-bold hover:opacity-90 active:scale-95 transition-all text-sm cursor-pointer"
+              >
+                Commit Changes
+              </button>
+            </div>
+          </div>
+        </form>
+      </main>
     </>
   );
 };
