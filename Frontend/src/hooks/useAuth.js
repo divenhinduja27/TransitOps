@@ -49,12 +49,23 @@ const useAuth = () => {
     setIsAuthenticated(false);
   }, []);
 
+  /**
+   * Update user details in context & storage
+   */
+  const updateUser = useCallback((userData) => {
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const updatedUser = { ...currentUser, ...userData };
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    setUser(updatedUser);
+  }, []);
+
   return {
     user,
     isAuthenticated,
     loading,
     login,
     logout,
+    updateUser,
   };
 };
 

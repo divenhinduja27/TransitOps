@@ -1,7 +1,9 @@
 import { NavLink, useNavigate } from 'react-router-dom';
+import useAuth from '../hooks/useAuth';
 
 const Sidebar = () => {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   const menuItems = [
     { name: 'Dashboard', path: '/dashboard', icon: 'dashboard' },
@@ -16,6 +18,7 @@ const Sidebar = () => {
 
   const handleLogout = (e) => {
     e.preventDefault();
+    logout();
     navigate('/login');
   };
 
@@ -56,7 +59,28 @@ const Sidebar = () => {
         ))}
       </nav>
 
-      <div className="mt-auto border-t border-outline-variant/30 pt-4 flex flex-col gap-1">
+      {/* Dynamic Mini Profile Card */}
+      {user && (
+        <div className="mx-4 mb-2 p-3 bg-surface-container border border-outline-variant/10 rounded-lg flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 border border-outline-variant/30">
+            <img 
+              src={user.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256"} 
+              alt="Avatar" 
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <div className="min-w-0">
+            <p className="font-semibold text-xs text-on-surface truncate">
+              {user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : (user.email?.split('@')[0] || 'Operator')}
+            </p>
+            <p className="text-[9px] text-on-surface-variant/80 font-bold uppercase tracking-wider truncate">
+              {user.role ? user.role.replace('ROLE_', '').replace('_', ' ').toLowerCase() : 'Operator'}
+            </p>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-auto border-t border-outline-variant/30 pt-4 flex flex-col gap-1 font-semibold">
         <NavLink
           to="/profile"
           className={({ isActive }) =>

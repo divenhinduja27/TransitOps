@@ -1,13 +1,17 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import useAuth from '../hooks/useAuth';
 
 const Header = ({ title, subtitle, searchPlaceholder, searchValue, onSearchChange, actions }) => {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    logout();
     navigate('/login');
   };
+
+  const userAvatar = user?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256";
+  const userDisplayName = user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : (user?.email?.split('@')[0] || 'Operator');
 
   return (
     <header className="sticky top-0 z-40 w-full px-6 py-4 bg-[#141314]/85 backdrop-blur-md border-b border-[#2E2E2E] flex justify-between items-center">
@@ -51,22 +55,34 @@ const Header = ({ title, subtitle, searchPlaceholder, searchValue, onSearchChang
           <button className="flex items-center gap-2 w-10 h-10 rounded-full border border-outline-variant overflow-hidden focus:outline-none cursor-pointer">
             <img
               className="w-full h-full object-cover"
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=256"
-              alt="Manager Avatar"
+              src={userAvatar}
+              alt="User Avatar"
             />
           </button>
-          <div className="absolute right-0 mt-2 w-48 bg-surface-container border border-outline-variant rounded-lg shadow-xl py-1 hidden group-hover:block z-50">
-            <div className="px-4 py-2 border-b border-outline-variant/30">
-              <p className="text-xs text-on-surface-variant">Logged in as</p>
-              <p className="text-sm font-semibold text-on-surface">admin</p>
+          {/* Outer hover wrapper to bridge the gap between button and menu */}
+          <div className="absolute right-0 top-full pt-1.5 w-48 hidden group-hover:block z-50">
+            <div className="bg-surface-container border border-outline-variant rounded-lg shadow-xl py-1">
+              <div className="px-4 py-2 border-b border-outline-variant/30">
+                <p className="text-xs text-on-surface-variant">Logged in as</p>
+                <p className="text-sm font-semibold text-on-surface truncate">{userDisplayName}</p>
+              </div>
+              
+              <Link
+                to="/profile"
+                className="w-full text-left px-4 py-2 text-sm text-on-surface hover:bg-surface-container-high flex items-center gap-2 transition-colors cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[18px]">account_circle</span>
+                My Profile
+              </Link>
+
+              <button
+                onClick={handleLogout}
+                className="w-full text-left px-4 py-2 text-sm text-error hover:bg-surface-container-high flex items-center gap-2 transition-colors cursor-pointer border-t border-outline-variant/20"
+              >
+                <span className="material-symbols-outlined text-[18px]">logout</span>
+                Logout
+              </button>
             </div>
-            <button
-              onClick={handleLogout}
-              className="w-full text-left px-4 py-2 text-sm text-error hover:bg-surface-container-high flex items-center gap-2 transition-colors cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-[18px]">logout</span>
-              Logout
-            </button>
           </div>
         </div>
       </div>
