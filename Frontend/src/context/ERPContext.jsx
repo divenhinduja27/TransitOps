@@ -3,38 +3,35 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 const ERPContext = createContext(null);
 
 const INITIAL_VEHICLES = [
-  { id: 'V-101', registrationNumber: 'MH-12-GQ-4432', make: 'Volvo', model: 'FH16 Heavy Container', type: 'Container', capacity: 25000, status: 'Available', lastServiceDate: '2026-05-10' },
-  { id: 'V-102', registrationNumber: 'DL-1C-AH-9821', make: 'Tata', model: 'Signa 2823.K', type: 'Heavy Truck', capacity: 18000, status: 'Available', lastServiceDate: '2026-06-15' },
-  { id: 'V-103', registrationNumber: 'KA-03-MM-7110', make: 'BharatBenz', model: 'Gigashield 4023T', type: 'Flatbed', capacity: 22000, status: 'Dispatched', lastServiceDate: '2026-06-20' },
+  { id: 'V-101', registrationNumber: 'VAN-05', make: 'Chevrolet', model: 'Express Cargo', type: 'Container', capacity: 4500, status: 'In Shop', lastServiceDate: '2026-07-07' },
+  { id: 'V-102', registrationNumber: 'TRUCK-11', make: 'BharatBenz', model: 'Gigashield 4023T', type: 'Heavy Truck', capacity: 18000, status: 'Available', lastServiceDate: '2026-06-15' },
+  { id: 'V-103', registrationNumber: 'MINI-03', make: 'Tata', model: 'Ace Gold', type: 'Cargo Van', capacity: 2000, status: 'In Shop', lastServiceDate: '2026-07-10' },
   { id: 'V-104', registrationNumber: 'HR-55-XY-0045', make: 'Mahindra', model: 'Blazo X 35', type: 'Tanker', capacity: 20000, status: 'Available', lastServiceDate: '2026-07-01' },
-  { id: 'V-105', registrationNumber: 'MH-43-P-8821', make: 'Volvo', model: 'FMX 460', type: 'Dumper', capacity: 16000, status: 'In Shop', lastServiceDate: '2026-07-09' },
+  { id: 'V-105', registrationNumber: 'MH-43-P-8821', make: 'Volvo', model: 'FMX 460', type: 'Dumper', capacity: 16000, status: 'Available', lastServiceDate: '2026-07-09' },
   { id: 'V-106', registrationNumber: 'GJ-01-ZZ-5645', make: 'Eicher', model: 'Pro 6028', type: 'Cargo Van', capacity: 8000, status: 'Available', lastServiceDate: '2026-05-22' },
-  { id: 'V-107', registrationNumber: 'WB-20-AB-1234', make: 'Tata', model: 'Ultra T.16', type: 'Box Truck', capacity: 10000, status: 'Dispatched', lastServiceDate: '2026-06-30' },
+  { id: 'V-107', registrationNumber: 'WB-20-AB-1234', make: 'Tata', model: 'Ultra T.16', type: 'Box Truck', capacity: 10000, status: 'Available', lastServiceDate: '2026-06-30' },
   { id: 'V-108', registrationNumber: 'TN-07-CD-5678', make: 'Scania', model: 'R500', type: 'Trailer', capacity: 28000, status: 'Available', lastServiceDate: '2026-07-11' }
 ];
 
 const INITIAL_DRIVERS = [
-  { id: 'D-201', name: 'Rajesh Kumar', licenseNumber: 'DL-14202100456', licenseExpiry: '2028-12-10', status: 'Available', phone: '+91 98765 43210' },
-  { id: 'D-202', name: 'Sandeep Singh', licenseNumber: 'HR-26201900891', licenseExpiry: '2027-08-15', status: 'Available', phone: '+91 99112 23344' },
-  { id: 'D-203', name: 'Amit Sharma', licenseNumber: 'KA-51202300012', licenseExpiry: '2026-03-20', status: 'Expired', phone: '+91 98223 34455' },
-  { id: 'D-204', name: 'Vijay Yadav', licenseNumber: 'MH-12201800561', licenseExpiry: '2029-01-30', status: 'Available', phone: '+91 97665 43210' },
-  { id: 'D-205', name: 'Gurnam Singh', licenseNumber: 'PB-65201500344', licenseExpiry: '2025-06-05', status: 'Suspended', phone: '+91 94112 88990' },
-  { id: 'D-206', name: 'Arjun Patil', licenseNumber: 'MH-43202200455', licenseExpiry: '2031-10-15', status: 'Active', phone: '+91 95443 12345' },
-  { id: 'D-207', name: 'Anil Banerjee', licenseNumber: 'WB-02202000234', licenseExpiry: '2027-11-20', status: 'Active', phone: '+91 98300 12345' },
-  { id: 'D-208', name: 'Pradeep Pillai', licenseNumber: 'TN-01202400982', licenseExpiry: '2026-08-05', status: 'Available', phone: '+91 91760 98765' }
+  { id: 'D-201', name: 'Alex', licenseNumber: 'DL-88213', category: 'LMV', licenseExpiry: '2028-12', phone: '9876543210', tripCompletion: '96%', safetyStatus: 'Available', status: 'Available' },
+  { id: 'D-202', name: 'John', licenseNumber: 'DL-44120', category: 'HMV', licenseExpiry: '2025-03', phone: '9822012345', tripCompletion: '81%', safetyStatus: 'Suspended', status: 'Suspended' },
+  { id: 'D-203', name: 'Priya', licenseNumber: 'DL-77031', category: 'LMV', licenseExpiry: '2027-08', phone: '9911023456', tripCompletion: '99%', safetyStatus: 'On Trip', status: 'On Trip' },
+  { id: 'D-204', name: 'Suresh', licenseNumber: 'DL-90045', category: 'HMV', licenseExpiry: '2027-01', phone: '9744034567', tripCompletion: '88%', safetyStatus: 'Available', status: 'Off Duty' }
 ];
 
 const INITIAL_TRIPS = [
-  { id: 'T-1001', tripId: 'TRP-1001', vehicleId: 'V-103', driverId: 'D-206', origin: 'Mumbai Port (JNPT)', destination: 'Pune Logistics Park', cargoWeight: 18000, status: 'Dispatched', startDate: '2026-07-11', endDate: '', cost: 12500 },
-  { id: 'T-1002', tripId: 'TRP-1002', vehicleId: 'V-107', driverId: 'D-207', origin: 'Delhi Cargo Hub', destination: 'Jaipur Industrial Area', cargoWeight: 9500, status: 'Dispatched', startDate: '2026-07-12', endDate: '', cost: 8900 },
-  { id: 'T-1003', tripId: 'TRP-1003', vehicleId: 'V-101', driverId: 'D-201', origin: 'Kolkata Port', destination: 'Patna Warehouse', cargoWeight: 24000, status: 'Completed', startDate: '2026-07-08', endDate: '2026-07-10', cost: 22000 },
-  { id: 'T-1004', tripId: 'TRP-1004', vehicleId: 'V-102', driverId: 'D-202', origin: 'Chennai Dockyard', destination: 'Bangalore Depot', cargoWeight: 15000, status: 'Completed', startDate: '2026-07-05', endDate: '2026-07-07', cost: 14000 },
-  { id: 'T-1005', tripId: 'TRP-1005', vehicleId: 'V-108', driverId: 'D-208', origin: 'Bangalore Logistics Park', destination: 'Hyderabad Terminal', cargoWeight: 20000, status: 'Completed', startDate: '2026-07-02', endDate: '2026-07-04', cost: 18000 }
+  { id: 'T-1001', tripId: 'TRP-1001', vehicleId: 'V-103', driverId: 'D-203', origin: 'Mumbai Port (JNPT)', destination: 'Pune Logistics Park', cargoWeight: 18000, status: 'Dispatched', startDate: '2026-07-11', endDate: '', plannedDistance: 120 },
+  { id: 'T-1002', tripId: 'TRP-1002', vehicleId: 'V-107', driverId: 'D-201', origin: 'Delhi Cargo Hub', destination: 'Jaipur Industrial Area', cargoWeight: 9500, status: 'Completed', startDate: '2026-07-12', endDate: '2026-07-12', plannedDistance: 270 },
+  { id: 'T-1003', tripId: 'TRP-1003', vehicleId: 'V-101', driverId: 'D-201', origin: 'Kolkata Port', destination: 'Patna Warehouse', cargoWeight: 24000, status: 'Completed', startDate: '2026-07-08', endDate: '2026-07-10', plannedDistance: 580 },
+  { id: 'T-1004', tripId: 'TRP-1004', vehicleId: 'V-102', driverId: 'D-204', origin: 'Chennai Dockyard', destination: 'Bangalore Depot', cargoWeight: 15000, status: 'Completed', startDate: '2026-07-05', endDate: '2026-07-07', plannedDistance: 350 },
+  { id: 'T-1005', tripId: 'TRP-1005', vehicleId: 'V-108', driverId: 'D-204', origin: 'Bangalore Logistics Park', destination: 'Hyderabad Terminal', cargoWeight: 20000, status: 'Completed', startDate: '2026-07-02', endDate: '2026-07-04', plannedDistance: 620 }
 ];
 
 const INITIAL_MAINTENANCE = [
-  { id: 'M-301', vehicleId: 'V-105', serviceType: 'Engine Overhaul & Oil Filter Replacement', cost: 45000, startDate: '2026-07-09', endDate: '', status: 'In Progress' },
-  { id: 'M-302', vehicleId: 'V-102', serviceType: 'Brake Pad Replacement & Suspension Alignment', cost: 12000, startDate: '2026-06-12', endDate: '2026-06-15', status: 'Completed' }
+  { id: 'M-301', vehicleId: 'V-101', serviceType: 'Oil Change', cost: 2500, startDate: '2026-07-07', endDate: '', status: 'In Progress' },
+  { id: 'M-302', vehicleId: 'V-102', serviceType: 'Engine Repair', cost: 18000, startDate: '2026-06-12', endDate: '2026-06-15', status: 'Completed' },
+  { id: 'M-303', vehicleId: 'V-103', serviceType: 'Tyre Replace', cost: 6200, startDate: '2026-07-10', endDate: '', status: 'In Progress' }
 ];
 
 const INITIAL_FUEL_LOGS = [
@@ -163,15 +160,28 @@ export const ERPProvider = ({ children }) => {
 
   // --- DRIVER ACTIONS ---
   const addDriver = (driver) => {
-    const expiryDate = new Date(driver.licenseExpiry);
-    const today = new Date();
-    let status = 'Available';
-    if (expiryDate < today) {
-      status = 'Expired';
+    let licenseExpiryStr = driver.licenseExpiry;
+    if (licenseExpiryStr.length === 7) { // format YYYY-MM
+      const parts = licenseExpiryStr.split('-');
+      licenseExpiryStr = `${parts[0]}-${parts[1]}-01`;
     }
+    const expiryDate = new Date(licenseExpiryStr);
+    const today = new Date();
+    
+    let safetyStatus = driver.safetyStatus || 'Available';
+    let status = driver.status || 'Available';
+
+    if (expiryDate < today) {
+      safetyStatus = 'Suspended';
+      status = 'Suspended';
+    }
+
     const newDriver = {
       ...driver,
       id: `D-${Date.now().toString().slice(-3)}`,
+      category: driver.category || 'LMV',
+      tripCompletion: driver.tripCompletion || '100%',
+      safetyStatus,
       status
     };
     setDrivers(prev => [...prev, newDriver]);
@@ -179,15 +189,28 @@ export const ERPProvider = ({ children }) => {
   };
 
   const editDriver = (updatedDriver) => {
-    const expiryDate = new Date(updatedDriver.licenseExpiry);
-    const today = new Date();
-    let status = updatedDriver.status;
-    if (expiryDate < today) {
-      status = 'Expired';
-    } else if (status === 'Expired') {
-      status = 'Available';
+    let expiryStr = updatedDriver.licenseExpiry;
+    if (expiryStr.length === 7) {
+      const parts = expiryStr.split('-');
+      expiryStr = `${parts[0]}-${parts[1]}-01`;
     }
-    setDrivers(prev => prev.map(d => d.id === updatedDriver.id ? { ...d, ...updatedDriver, status } : d));
+    const expiryDate = new Date(expiryStr);
+    const today = new Date();
+    
+    let safetyStatus = updatedDriver.safetyStatus;
+    let status = updatedDriver.status;
+
+    if (expiryDate < today) {
+      safetyStatus = 'Suspended';
+      status = 'Suspended';
+    }
+
+    setDrivers(prev => prev.map(d => d.id === updatedDriver.id ? { 
+      ...d, 
+      ...updatedDriver, 
+      safetyStatus, 
+      status 
+    } : d));
   };
 
   const deleteDriver = (id) => {
@@ -208,13 +231,15 @@ export const ERPProvider = ({ children }) => {
 
     const driver = drivers.find(d => d.id === trip.driverId);
     if (!driver) throw new Error('Driver not found.');
-    if (driver.status !== 'Available') {
-      throw new Error(`Driver is not available. Current status: ${driver.status}`);
-    }
 
+    // Check expiry
+    let expiryStr = driver.licenseExpiry;
+    if (expiryStr.length === 7) {
+      expiryStr = `${expiryStr}-01`;
+    }
     const today = new Date();
-    if (new Date(driver.licenseExpiry) < today) {
-      throw new Error('Cannot assign driver. Driving license has expired.');
+    if (new Date(expiryStr) < today || driver.safetyStatus === 'Suspended') {
+      throw new Error('Cannot assign driver. Driving license has expired or driver is suspended.');
     }
 
     const weight = Number(trip.cargoWeight);
@@ -230,10 +255,10 @@ export const ERPProvider = ({ children }) => {
       origin: trip.origin,
       destination: trip.destination,
       cargoWeight: weight,
-      status: trip.status || 'Draft',
-      startDate: trip.status === 'Dispatched' ? new Date().toISOString().split('T')[0] : '',
+      status: trip.status || 'Dispatched', // default to dispatched
+      startDate: new Date().toISOString().split('T')[0],
       endDate: '',
-      cost: Number(trip.cost) || 0
+      plannedDistance: Number(trip.plannedDistance) || 0
     };
 
     setTrips(prev => [...prev, newTrip]);
@@ -241,7 +266,7 @@ export const ERPProvider = ({ children }) => {
     if (newTrip.status === 'Dispatched') {
       // Automatically lock vehicle and driver
       setVehicles(prev => prev.map(v => v.id === trip.vehicleId ? { ...v, status: 'Dispatched' } : v));
-      setDrivers(prev => prev.map(d => d.id === trip.driverId ? { ...d, status: 'Active' } : d));
+      setDrivers(prev => prev.map(d => d.id === trip.driverId ? { ...d, safetyStatus: 'On Trip', status: 'On Trip' } : d));
     }
 
     return newTrip;
@@ -261,14 +286,14 @@ export const ERPProvider = ({ children }) => {
       if (status === 'Dispatched' && oldStatus !== 'Dispatched') {
         startDate = new Date().toISOString().split('T')[0];
         setVehicles(vPrev => vPrev.map(v => v.id === vehicleId ? { ...v, status: 'Dispatched' } : v));
-        setDrivers(dPrev => dPrev.map(d => d.id === driverId ? { ...d, status: 'Active' } : d));
+        setDrivers(dPrev => dPrev.map(d => d.id === driverId ? { ...d, safetyStatus: 'On Trip', status: 'On Trip' } : d));
       } else if (status === 'Completed' && oldStatus !== 'Completed') {
         endDate = new Date().toISOString().split('T')[0];
         setVehicles(vPrev => vPrev.map(v => v.id === vehicleId ? { ...v, status: 'Available' } : v));
-        setDrivers(dPrev => dPrev.map(d => d.id === driverId ? { ...d, status: 'Available' } : d));
+        setDrivers(dPrev => dPrev.map(d => d.id === driverId ? { ...d, safetyStatus: 'Available', status: 'Available' } : d));
       } else if (status === 'Cancelled' && oldStatus === 'Dispatched') {
         setVehicles(vPrev => vPrev.map(v => v.id === vehicleId ? { ...v, status: 'Available' } : v));
-        setDrivers(dPrev => dPrev.map(d => d.id === driverId ? { ...d, status: 'Available' } : d));
+        setDrivers(dPrev => dPrev.map(d => d.id === driverId ? { ...d, safetyStatus: 'Available', status: 'Available' } : d));
       }
 
       return {
@@ -288,20 +313,24 @@ export const ERPProvider = ({ children }) => {
       throw new Error('Cannot put vehicle in maintenance. It is active on an ongoing trip.');
     }
 
+    const recStatus = record.status || 'In Progress';
+    const finishDate = recStatus === 'Completed' ? (record.startDate || new Date().toISOString().split('T')[0]) : '';
+
     const newRecord = {
       id: `M-${Date.now().toString().slice(-3)}`,
       vehicleId: record.vehicleId,
       serviceType: record.serviceType,
       cost: Number(record.cost),
       startDate: record.startDate || new Date().toISOString().split('T')[0],
-      endDate: '',
-      status: 'In Progress'
+      endDate: finishDate,
+      status: recStatus
     };
 
     setMaintenance(prev => [...prev, newRecord]);
 
-    // Automatically set vehicle to "In Shop"
-    setVehicles(prev => prev.map(v => v.id === record.vehicleId ? { ...v, status: 'In Shop' } : v));
+    // Automatically transition vehicle status: In Shop if In Progress, Available if Completed
+    const vehicleStatus = recStatus === 'Completed' ? 'Available' : 'In Shop';
+    setVehicles(prev => prev.map(v => v.id === record.vehicleId ? { ...v, status: vehicleStatus, lastServiceDate: recStatus === 'Completed' ? (record.startDate || new Date().toISOString().split('T')[0]) : v.lastServiceDate } : v));
     return newRecord;
   };
 

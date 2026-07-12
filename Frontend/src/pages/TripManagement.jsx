@@ -13,15 +13,29 @@ const TripManagement = () => {
     origin: '',
     destination: '',
     cargoWeight: '',
-    cost: '',
-    status: 'Draft'
+    plannedDistance: '',
+    status: 'Dispatched'
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // Check if driver license is expired
+  const isLicenseExpired = (expiryDate) => {
+    if (!expiryDate) return false;
+    let expStr = expiryDate;
+    if (expStr.length === 7) { // format YYYY-MM
+      expStr = `${expStr}-01`;
+    }
+    return new Date(expStr) < new Date();
+  };
+
   // Dropdown options
   const availableVehicles = vehicles.filter(v => v.status === 'Available');
-  const availableDrivers = drivers.filter(d => d.status === 'Available');
+  const availableDrivers = drivers.filter(d => 
+    d.status === 'Available' && 
+    d.safetyStatus === 'Available' && 
+    !isLicenseExpired(d.licenseExpiry)
+  );
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -39,15 +53,15 @@ const TripManagement = () => {
 
     try {
       const newTrip = createTrip(formData);
-      setSuccess(`Trip ${newTrip.tripId} successfully created & status set to ${newTrip.status}.`);
+      setSuccess(`Trip ${newTrip.tripId} successfully dispatched.`);
       setFormData({
         vehicleId: '',
         driverId: '',
         origin: '',
         destination: '',
         cargoWeight: '',
-        cost: '',
-        status: 'Draft'
+        plannedDistance: '',
+        status: 'Dispatched'
       });
     } catch (err) {
       setError(err.message);
@@ -190,7 +204,7 @@ const TripManagement = () => {
                   </div>
                 </div>
 
-                {/* Weights & Budget */}
+                {/* Weights & Distance */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-xs text-on-surface-variant font-bold uppercase">Cargo Weight (kg)</label>
@@ -204,28 +218,16 @@ const TripManagement = () => {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs text-on-surface-variant font-bold uppercase">Trip Cost / Budget (₹)</label>
+                    <label className="text-xs text-on-surface-variant font-bold uppercase">Planned Distance (km)</label>
                     <input
                       className="form-input"
                       type="number"
                       required
-                      placeholder="e.g. 12000"
-                      value={formData.cost}
-                      onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
+                      placeholder="e.g. 120"
+                      value={formData.plannedDistance}
+                      onChange={(e) => setFormData({ ...formData, plannedDistance: e.target.value })}
                     />
                   </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs text-on-surface-variant font-bold uppercase">Deployment Phase</label>
-                  <select
-                    className="form-input bg-[#161616]"
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                  >
-                    <option value="Draft">Draft (Plan Mode)</option>
-                    <option value="Dispatched">Dispatched (Deploy Instantly)</option>
-                  </select>
                 </div>
 
                 <button
@@ -288,7 +290,7 @@ const TripManagement = () => {
                         </div>
 
                         <div className="flex flex-row sm:flex-col justify-end items-center sm:items-end gap-2">
-                          <span className="text-sm font-mono font-bold text-[#ff8a00] mb-0 sm:mb-2">₹{trip.cost.toLocaleString()}</span>
+                          <span className="text-sm font-mono font-bold text-[#ff8a00] mb-0 sm:mb-2">{trip.plannedDistance ? `${trip.plannedDistance} km` : 'N/A'}</span>
                           <div className="flex gap-2">
                             {trip.status === 'Draft' && (
                               <button

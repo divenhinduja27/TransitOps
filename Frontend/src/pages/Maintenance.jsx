@@ -11,7 +11,8 @@ const Maintenance = () => {
     vehicleId: '',
     serviceType: '',
     cost: '',
-    startDate: new Date().toISOString().split('T')[0]
+    startDate: new Date().toISOString().split('T')[0],
+    status: 'In Progress'
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -31,12 +32,13 @@ const Maintenance = () => {
 
     try {
       createMaintenanceRecord(formData);
-      setSuccess('Maintenance job successfully logged. Vehicle set to "In Shop".');
+      setSuccess('Maintenance job successfully logged.');
       setFormData({
         vehicleId: '',
         serviceType: '',
         cost: '',
-        startDate: new Date().toISOString().split('T')[0]
+        startDate: new Date().toISOString().split('T')[0],
+        status: 'In Progress'
       });
     } catch (err) {
       setError(err.message);
@@ -53,11 +55,6 @@ const Maintenance = () => {
   const getVehicleReg = (vehicleId) => {
     const v = vehicles.find(veh => veh.id === vehicleId);
     return v ? v.registrationNumber : vehicleId;
-  };
-
-  const getVehicleName = (vehicleId) => {
-    const v = vehicles.find(veh => veh.id === vehicleId);
-    return v ? `${v.make} ${v.model}` : '';
   };
 
   // Filtered maintenance logs
@@ -90,6 +87,13 @@ const Maintenance = () => {
         .form-input:focus {
             border-color: #ff8a00;
         }
+        .table-row {
+          border-bottom: 1px solid #2E2E2E;
+          transition: background 0.2s;
+        }
+        .table-row:hover {
+          background-color: rgba(255, 255, 255, 0.02);
+        }
       `}</style>
 
       <main className="ml-[260px] min-h-screen flex flex-col bg-[#111111] text-[#e6e1e2]">
@@ -102,12 +106,12 @@ const Maintenance = () => {
         />
 
         <div className="p-6 flex flex-col xl:flex-row gap-6 flex-grow">
-          {/* LEFT: File Service Record */}
+          {/* LEFT: Log Service Record Form */}
           <div className="xl:w-1/3 space-y-6">
             <div className="glass-card p-6 rounded-xl border border-[#2E2E2E]">
               <h3 className="text-base font-bold mb-6 pb-2 border-b border-[#2E2E2E] flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#ff8a00]">build</span>
-                New Maintenance Ticket
+                Log Service Record
               </h3>
 
               {error && (
@@ -123,10 +127,10 @@ const Maintenance = () => {
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4 text-xs">
                 {/* Vehicle Choice */}
                 <div className="space-y-1">
-                  <label className="text-xs text-on-surface-variant font-bold uppercase">Select Fleet Vehicle</label>
+                  <label className="text-xs text-on-surface-variant font-bold uppercase">Vehicle</label>
                   <select
                     className="form-input bg-[#161616]"
                     required
@@ -142,33 +146,34 @@ const Maintenance = () => {
                   </select>
                 </div>
 
-                {/* Service type description */}
+                {/* Service Type */}
                 <div className="space-y-1">
-                  <label className="text-xs text-on-surface-variant font-bold uppercase">Service Details</label>
-                  <textarea
-                    className="form-input h-20 py-2 resize-none"
+                  <label className="text-xs text-on-surface-variant font-bold uppercase">Service Type</label>
+                  <input
+                    className="form-input"
+                    type="text"
                     required
-                    placeholder="e.g. Brake replacement, regular oil servicing..."
+                    placeholder="e.g. Oil Change"
                     value={formData.serviceType}
                     onChange={(e) => setFormData({ ...formData, serviceType: e.target.value })}
                   />
                 </div>
 
-                {/* Service budget cost */}
+                {/* Service budget cost & Date */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs text-on-surface-variant font-bold uppercase">Estimated Cost (₹)</label>
+                    <label className="text-xs text-on-surface-variant font-bold uppercase">Cost</label>
                     <input
                       className="form-input"
                       type="number"
                       required
-                      placeholder="e.g. 5000"
+                      placeholder="2500"
                       value={formData.cost}
                       onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs text-on-surface-variant font-bold uppercase">Start Date</label>
+                    <label className="text-xs text-on-surface-variant font-bold uppercase">Date</label>
                     <input
                       className="form-input"
                       type="date"
@@ -179,73 +184,102 @@ const Maintenance = () => {
                   </div>
                 </div>
 
+                {/* Status Dropdown Option added as requested */}
+                <div className="space-y-1">
+                  <label className="text-xs text-on-surface-variant font-bold uppercase">Status</label>
+                  <select
+                    className="form-input bg-[#161616]"
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  >
+                    <option value="In Progress">Active (In Shop)</option>
+                    <option value="Completed">Completed (Available)</option>
+                  </select>
+                </div>
+
                 <button
                   type="submit"
-                  className="w-full h-11 bg-red-500/20 text-red-400 border border-red-500/30 font-bold rounded-lg hover:bg-red-500/30 active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer mt-4"
+                  className="w-full h-11 bg-[#ff8a00] hover:bg-[#e07b00] text-black font-bold rounded-lg hover:opacity-95 active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer mt-4"
                 >
-                  <span className="material-symbols-outlined text-[20px]">handyman</span>
-                  Send Vehicle to Shop
+                  <span className="material-symbols-outlined text-[20px]">save</span>
+                  Save
                 </button>
               </form>
+
             </div>
           </div>
 
-          {/* RIGHT: Maintenance Logs */}
+          {/* RIGHT: Service Log Table matching Blueprint */}
           <div className="flex-grow space-y-4">
             <div className="glass-card p-6 rounded-xl border border-[#2E2E2E] flex flex-col h-full">
               <h3 className="text-base font-bold mb-4 pb-2 border-b border-[#2E2E2E] flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#ff8a00]">history</span>
-                Maintenance Log History
+                <span className="material-symbols-outlined text-[#ff8a00]">list_alt</span>
+                Service Logs
               </h3>
 
-              <div className="space-y-4 overflow-y-auto max-h-[600px] pr-2">
-                {filteredLogs.length === 0 ? (
-                  <p className="text-center py-12 text-on-surface-variant/40">No maintenance tickets registered.</p>
-                ) : (
-                  filteredLogs.map(log => (
-                    <div key={log.id} className="bg-[#1A1A1A]/70 border border-[#2E2E2E] p-4 rounded-lg flex flex-col sm:flex-row justify-between gap-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs font-mono font-bold text-primary">{log.id}</span>
-                          <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold ${
-                            log.status === 'Completed' ? 'bg-green-500/10 text-green-400 border border-green-500/30' :
-                            'bg-red-500/10 text-red-400 border border-red-500/30'
-                          }`}>
-                            {log.status}
-                          </span>
-                        </div>
-                        <div className="text-sm font-semibold">
-                          {getVehicleReg(log.vehicleId)}
-                          <span className="text-xs text-on-surface-variant/80 font-normal ml-2">({getVehicleName(log.vehicleId)})</span>
-                        </div>
-                        <p className="text-xs text-on-surface-variant/90 font-medium">
-                          <span className="text-on-surface font-bold">Issue:</span> {log.serviceType}
-                        </p>
-                        <div className="grid grid-cols-2 gap-x-6 text-[11px] text-on-surface-variant/75">
-                          <div>
-                            <span className="font-bold">Initiated:</span> {log.startDate}
-                          </div>
-                          <div>
-                            <span className="font-bold">Resolved:</span> {log.endDate || 'Ongoing'}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-row sm:flex-col justify-end items-center sm:items-end gap-2">
-                        <span className="text-sm font-mono font-bold text-[#ff8a00] mb-0 sm:mb-2">₹{log.cost.toLocaleString()}</span>
-                        {log.status === 'In Progress' && (
-                          <button
-                            onClick={() => handleResolve(log.id)}
-                            className="bg-green-500/20 text-green-400 border border-green-500/30 px-3 py-1.5 rounded text-xs font-bold hover:bg-green-500/30 transition-all cursor-pointer"
-                          >
-                            Resolve Ticket
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                )}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-[#2E2E2E] text-zinc-400 font-bold uppercase tracking-wider bg-white/[0.01]">
+                      <th className="py-4 px-6 text-[10px] font-bold tracking-wider text-zinc-400">Vehicle</th>
+                      <th className="py-4 px-6 text-[10px] font-bold tracking-wider text-zinc-400">Service</th>
+                      <th className="py-4 px-6 text-[10px] font-bold tracking-wider text-zinc-400">Cost</th>
+                      <th className="py-4 px-6 text-[10px] font-bold tracking-wider text-zinc-400 text-right">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredLogs.length === 0 ? (
+                      <tr>
+                        <td colSpan="4" className="py-12 text-center text-on-surface-variant/40">
+                          No registered service tickets.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredLogs.map(log => (
+                        <tr key={log.id} className="table-row">
+                          <td className="py-4 px-6 font-semibold text-white whitespace-nowrap">
+                            <span className="inline-block px-2.5 py-1 bg-zinc-800/80 text-zinc-200 border border-zinc-700/60 rounded text-[11px] font-mono tracking-wide uppercase shadow-sm">
+                              {getVehicleReg(log.vehicleId)}
+                            </span>
+                          </td>
+                          <td className="py-4 px-6 text-zinc-300">
+                            {log.serviceType}
+                          </td>
+                          <td className="py-4 px-6 font-mono font-bold text-zinc-100 whitespace-nowrap text-sm">
+                            ₹{log.cost.toLocaleString()}
+                          </td>
+                          <td className="py-4 px-6 whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-2.5 flex-nowrap">
+                              {log.status === 'Completed' ? (
+                                <span className="inline-flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1.5 rounded-lg text-[10px] font-extrabold uppercase tracking-wider whitespace-nowrap">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                  Completed
+                                </span>
+                              ) : (
+                                <>
+                                  <span className="inline-flex items-center gap-1.5 bg-orange-500/10 text-orange-400 border border-orange-500/20 px-2.5 py-1.5 rounded-lg text-[10px] font-extrabold uppercase tracking-wider whitespace-nowrap">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse"></span>
+                                    In Shop
+                                  </span>
+                                  <button
+                                    onClick={() => handleResolve(log.id)}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-500 text-black hover:bg-emerald-400 font-extrabold rounded-md text-[10px] uppercase tracking-wider cursor-pointer shadow-md hover:shadow-emerald-500/20 transition-all active:scale-95 whitespace-nowrap"
+                                    title="Complete Service Log"
+                                  >
+                                    <span className="material-symbols-outlined text-[12px] font-black">check</span>
+                                    Resolve
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
+
             </div>
           </div>
         </div>
