@@ -19,7 +19,7 @@ const CITY_COORDS = {
 };
 
 const Dashboard = () => {
-  const { vehicles, drivers, trips } = useERP();
+  const { vehicles, drivers, trips, getVehicleHealthScore } = useERP();
   const { theme } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -652,7 +652,7 @@ const Dashboard = () => {
             </div>
 
             {/* Fleet Utilization */}
-            <div className="glass-card p-4 rounded-xl flex flex-col justify-between h-full col-span-1 sm:col-span-2">
+            <div className="glass-card p-4 rounded-xl flex flex-col justify-between h-full col-span-1">
               <div className="flex justify-between items-start">
                 <span className="text-[var(--color-text-muted)] text-xs font-semibold uppercase tracking-wider">Fleet Utilization</span>
                 <span className="material-symbols-outlined text-yellow-400 text-[20px]">analytics</span>
@@ -667,6 +667,31 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
+
+            {/* Average Fleet Health */}
+            {(() => {
+              const avgHealth = vehicles.length > 0 ? Math.round(vehicles.reduce((sum, v) => sum + getVehicleHealthScore(v.id), 0) / vehicles.length) : 100;
+              const color = avgHealth >= 80 ? '#10B981' : avgHealth >= 60 ? '#F59E0B' : avgHealth >= 40 ? '#FF8A00' : '#EF4444';
+              const label = avgHealth >= 80 ? 'Healthy' : avgHealth >= 60 ? 'Needs Attention' : avgHealth >= 40 ? 'Service Recommended' : 'Critical';
+
+              return (
+                <div className="glass-card p-4 rounded-xl flex flex-col justify-between h-full col-span-1">
+                  <div className="flex justify-between items-start">
+                    <span className="text-[var(--color-text-muted)] text-xs font-semibold uppercase tracking-wider">Avg Fleet Health</span>
+                    <span className="material-symbols-outlined text-[20px]" style={{ color: color }}>health_and_safety</span>
+                  </div>
+                  <div className="mt-4">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl font-extrabold text-[var(--color-text-primary)] metric-glow" style={{ color: color }}>{avgHealth}%</span>
+                      <span className="text-[10px] font-semibold" style={{ color: color }}>{label}</span>
+                    </div>
+                    <div className="w-full bg-[var(--border-color)] h-1.5 rounded-full mt-3 overflow-hidden">
+                      <div className="h-full" style={{ width: `${avgHealth}%`, backgroundColor: color }}></div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Secondary Stats Section (Trips & Progress Bars) */}

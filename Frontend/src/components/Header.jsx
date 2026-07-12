@@ -106,7 +106,7 @@ const Header = ({ title, subtitle, searchPlaceholder, searchValue, onSearchChang
               search
             </span>
             <input
-              className="bg-[#161616] dark:bg-[#161616] light:bg-[#FFFFFF] border border-[var(--border-color)] rounded-full pl-10 pr-4 py-2 text-body-sm w-full focus:ring-1 focus:ring-[#ff8a00] focus:border-[#ff8a00] outline-none transition-all text-[var(--color-text-primary)]"
+              className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-full pl-10 pr-4 py-2 text-body-sm w-full focus:ring-1 focus:ring-[#ff8a00] focus:border-[#ff8a00] outline-none transition-all text-[var(--color-text-primary)]"
               placeholder={searchPlaceholder}
               type="text"
               value={searchValue || ''}
@@ -115,17 +115,17 @@ const Header = ({ title, subtitle, searchPlaceholder, searchValue, onSearchChang
           </div>
         )}
       </div>
-
+ 
       <div className="flex items-center gap-4">
         {actions}
         
         <div className="flex items-center gap-2 ml-4">
           <button 
             onClick={toggleTheme}
-            className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-all cursor-pointer"
+            className="flex items-center justify-center h-9 w-9 rounded-full border border-[var(--border-color)] bg-[var(--bg-card)] shadow-sm text-[var(--color-text-primary)] hover:border-[#ff8a00] hover:text-[#ff8a00] transition-all hover:scale-105 active:scale-95 cursor-pointer"
             title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
           >
-            <span className="material-symbols-outlined">
+            <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 0, 'wght' 700" }}>
               {theme === 'dark' ? 'light_mode' : 'dark_mode'}
             </span>
           </button>

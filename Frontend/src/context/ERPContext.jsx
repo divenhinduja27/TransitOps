@@ -431,6 +431,174 @@ export const ERPProvider = ({ children }) => {
       .reduce((sum, t) => sum + (Number(t.cost) * 1.4), 0);
   };
 
+  const getVehicleHealthScore = (vehicleId) => {
+    const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
+    if (!vehicle) return 80;
+
+    // 1. Fuel Efficiency
+    const logs = fuelLogs.filter(f => String(f.vehicleId) === String(vehicleId));
+    const liters = logs.reduce((sum, f) => sum + Number(f.liters), 0);
+    const dist = logs.reduce((sum, f) => sum + (Number(f.odometer) > 1000 ? 550 : 0), 0);
+    const fuelEfficiency = liters > 0 ? (dist / liters) : 8.5;
+    let effScore = 50;
+    if (fuelEfficiency >= 12) effScore = 100;
+    else if (fuelEfficiency <= 6) effScore = 0;
+    else effScore = ((fuelEfficiency - 6) / 6) * 100;
+
+    // 2. Maintenance Frequency
+    const vehicleMaint = maintenance.filter(m => String(m.vehicleId) === String(vehicleId));
+    let maintFreqScore = 100 - Math.min(vehicleMaint.length * 15, 60);
+
+    // 3. Vehicle Downtime
+    const inShop = vehicle.status === 'In Shop';
+    let downtimeScore = inShop ? 40 : 100;
+
+    // 4. Operational Cost
+    const cost = getVehicleOperationalCost(vehicleId);
+    let opexScore = 100;
+    if (cost > 10000) opexScore = Math.max(30, 100 - ((cost - 10000) / 70000) * 70);
+
+    // 5. Vehicle Age (simulated based on id)
+    const age = (Number(vehicleId) % 5) + 1;
+    let ageScore = 100 - (age * 10);
+
+    // 6. Total Trips Completed
+    const completedTrips = trips.filter(t => String(t.vehicleId) === String(vehicleId) && t.status === 'Completed').length;
+    let tripsScore = 70 + Math.min(completedTrips * 6, 30);
+
+    // 7. Odometer Reading
+    const odo = Number(vehicle.odometer) || 0;
+    let odoScore = 100;
+    if (odo > 15000) odoScore = Math.max(30, 100 - ((odo - 15000) / 135000) * 70);
+
+    const finalScore = Math.round(
+      (effScore * 0.20) +
+      (maintFreqScore * 0.15) +
+      (downtimeScore * 0.15) +
+      (opexScore * 0.15) +
+      (ageScore * 0.10) +
+      (tripsScore * 0.10) +
+      (odoScore * 0.15)
+    );
+
+    return Math.min(100, Math.max(0, finalScore));
+  };
+
+  const getVehicleHealthAnalysis = (vehicleId) => {
+    const vehicle = vehicles.find(v => String(v.id) === String(vehicleId));
+    const analysis = { reasons: [] };
+    if (!vehicle) return analysis;
+
+    const logs = fuelLogs.filter(f => String(f.vehicleId) === String(vehicleId));
+    const liters = logs.reduce((sum, f) => sum + Number(f.liters), 0);
+    const dist = logs.reduce((sum, f) => sum + (Number(f.odometer) > 1000 ? 550 : 0), 0);
+    const fuelEfficiency = liters > 0 ? (dist / liters) : 8.5;
+
+    const vehicleMaint = maintenance.filter(m => String(m.vehicleId) === String(vehicleId));
+    const inShop = vehicle.status === 'In Shop';
+    const cost = getVehicleOperationalCost(vehicleId);
+    const completedTrips = trips.filter(t => String(t.vehicleId) === String(vehicleId) && t.status === 'Completed').length;
+    const odo = Number(vehicle.odometer) || 0;
+
+    if (fuelEfficiency >= 9.5) {
+      analysis.reasons.push({ type: 'success', text: `Good fuel efficiency (${fuelEfficiency.toFixed(1)} km/L)` });
+    } else {
+      analysis.reasons.push({ type: 'warning', text: `Suboptimal fuel efficiency (${fuelEfficiency.toFixed(1)} km/L)` });
+    }
+
+    if (vehicleMaint.length <= 1) {
+      analysis.reasons.push({ type: 'success', text: `Low maintenance frequency (${vehicleMaint.length} records)` });
+    } else {
+      analysis.reasons.push({ type: 'warning', text: `High maintenance frequency (${vehicleMaint.length} records)` });
+    }
+
+    if (odo < 50000) {
+      analysis.reasons.push({ type: 'success', text: `Low mileage (${odo.toLocaleString()} km)` });
+    } else {
+      analysis.reasons.push({ type: 'warning', text: `High odometer reading (${odo.toLocaleString()} km)` });
+    }
+
+    if (inShop) {
+      analysis.reasons.push({ type: 'critical', text: 'Vehicle currently in service shop' });
+    } else {
+      analysis.reasons.push({ type: 'success', text: 'Vehicle currently active and available' });
+    }
+
+    if (cost < 30000) {
+      analysis.reasons.push({ type: 'success', text: `Low operational expenditure (₹${cost.toLocaleString()})` });
+    } else {
+      analysis.reasons.push({ type: 'warning', text: `High operational cost (₹${cost.toLocaleString()})` });
+    }
+
+    const nextMaint = vehicleMaint.length > 0 ? 'Due in 15 days' : 'Due in 5 days';
+
+    return {
+      reasons: analysis.reasons,
+      fuelEfficiency: `${fuelEfficiency.toFixed(1)} km/L`,
+      lastMaintenanceDate: vehicleMaint.length > 0 ? vehicleMaint[vehicleMaint.length - 1].startDate : 'None logged',
+      nextRecommendedService: nextMaint
+    };
+  };
+
+  const getSmartVehicleRecommendations = (cargoWeight) => {
+    const available = vehicles.filter(v => v.status === 'Available' && Number(v.capacity) >= Number(cargoWeight));
+    
+    const scored = available.map(v => {
+      const health = getVehicleHealthScore(v.id);
+      
+      const logs = fuelLogs.filter(f => String(f.vehicleId) === String(v.id));
+      const liters = logs.reduce((sum, f) => sum + Number(f.liters), 0);
+      const dist = logs.reduce((sum, f) => sum + (Number(f.odometer) > 1000 ? 550 : 0), 0);
+      const efficiency = liters > 0 ? (dist / liters) : 8.5;
+      const efficiencyScore = Math.min(100, (efficiency / 12) * 100);
+
+      const opex = getVehicleOperationalCost(v.id);
+      const rev = getVehicleRevenue(v.id);
+      const roi = opex > 0 ? (rev / opex) * 100 : 100;
+      const roiScore = Math.min(100, (roi / 150) * 100);
+
+      const costScore = opex > 50000 ? 30 : 100 - (opex / 50000) * 70;
+
+      const distance = ((Number(v.id) * 4) % 18) + 2; 
+      const distanceScore = 100 - (distance / 20) * 80;
+
+      const capacityRatio = cargoWeight > 0 ? Number(v.capacity) / Number(cargoWeight) : 1;
+      const capacityScore = capacityRatio > 3 ? 60 : 100 - (capacityRatio - 1) * 20;
+
+      const finalScore = Math.round(
+        (health * 0.25) +
+        (efficiencyScore * 0.15) +
+        (roiScore * 0.15) +
+        (costScore * 0.15) +
+        (distanceScore * 0.20) +
+        (capacityScore * 0.10)
+      );
+
+      const eta = Math.round(distance * 1.5 + 5);
+
+      const reasons = [];
+      if (distance <= 6) reasons.push("✔ Closest Vehicle");
+      if (health >= 85) reasons.push("✔ Highest Health Score");
+      if (opex <= 20000) reasons.push("✔ Lowest Operational Cost");
+      if (efficiency >= 10) reasons.push("✔ Excellent Fuel Efficiency");
+      if (capacityRatio <= 1.5) reasons.push("✔ Capacity Matches Cargo");
+
+      return {
+        vehicle: v,
+        score: finalScore,
+        eta,
+        distance,
+        efficiency: `${efficiency.toFixed(1)} km/L`,
+        health,
+        opex,
+        roi: Math.round(roi),
+        reasons: reasons.slice(0, 5)
+      };
+    });
+
+    return scored.sort((a, b) => b.score - a.score).slice(0, 3);
+  };
+
   return (
     <ERPContext.Provider
       value={{
@@ -459,7 +627,10 @@ export const ERPProvider = ({ children }) => {
         getVehicleTollCost,
         getVehicleMiscCost,
         getVehicleOperationalCost,
-        getVehicleRevenue
+        getVehicleRevenue,
+        getVehicleHealthScore,
+        getVehicleHealthAnalysis,
+        getSmartVehicleRecommendations
       }}
     >
       {children}

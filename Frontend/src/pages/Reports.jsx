@@ -470,18 +470,21 @@ const Reports = () => {
             font-weight: 500;
         }
         @media print {
+            aside, header, .filter-panel, .export-buttons {
+                display: none !important;
+            }
             main {
                 margin-left: 0 !important;
+                padding: 0 !important;
                 background-color: #ffffff !important;
                 color: #000000 !important;
-            }
-            header, .filter-panel, .export-buttons {
-                display: none !important;
+                width: 100% !important;
             }
             .glass-card {
                 background: #ffffff !important;
                 border: 1px solid #cccccc !important;
                 box-shadow: none !important;
+                page-break-inside: avoid !important;
             }
         }
       `}</style>
