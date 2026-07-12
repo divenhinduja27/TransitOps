@@ -2,18 +2,19 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
 import { ROUTES } from '../utils/constants';
-import { authenticateLocalUser } from '../utils/authDb';
+import { registerLocalUser } from '../utils/authDb';
 
-const Login = () => {
+const Register = () => {
   const navigate = useNavigate();
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('ROLE_FLEET_MANAGER');
-  const [rememberMe, setRememberMe] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [role, setRole] = useState('ROLE_DRIVER'); // Default to Dispatcher/Driver
   
   const [error, setError] = useState('');
-  const [infoMessage, setInfoMessage] = useState('');
+  const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   // Live Statistics states for Left Dashboard Preview (adds premium dynamic feel)
@@ -31,75 +32,57 @@ const Login = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const togglePassword = () => {
-    setShowPassword(!showPassword);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-    setInfoMessage('');
+    setSuccess('');
 
-    try {
-      // 1. Prioritize authenticating via live Spring Boot backend API
-      const response = await api.post('/auth/login', {
-        email: email.trim(),
-        password: password
-      });
-
-      const { accessToken, roles } = response.data;
-      
-      // Verify that the user has the selected role
-      const hasSelectedRole = roles && (roles.includes(role) || roles.includes(role.toUpperCase()));
-      if (!hasSelectedRole) {
-        setError('Invalid credentials');
-        setIsLoading(false);
-        return;
-      }
-      
-      localStorage.setItem('token', accessToken);
-      localStorage.setItem('user', JSON.stringify({
-        email: email.trim(),
-        role: role,
-        firstName: email.split('@')[0],
-        lastName: ''
-      }));
-
-      setInfoMessage('API connection authenticated. Synced with database cluster.');
-      setTimeout(() => navigate(ROUTES.DASHBOARD), 800);
-    } catch (err) {
-      console.warn("Backend auth offline or invalid credentials, checking virtual secure sandbox:", err.message);
-
-      // 2. Fallback to Local Virtual Database in LocalStorage
-      setTimeout(() => {
-        setIsLoading(false);
-        const result = authenticateLocalUser(email, password);
-        
-        if (result.success) {
-          // Verify that selected login role matches registered role
-          if (result.user.role !== role) {
-            setError('Invalid credentials');
-            return;
-          }
-          
-          localStorage.setItem('token', 'mock-transitops-erp-token');
-          localStorage.setItem('user', JSON.stringify({
-            email: result.user.email,
-            role: result.user.role,
-            firstName: result.user.firstName,
-            lastName: result.user.lastName
-          }));
-          
-          setInfoMessage('Secure Sandbox Session authorized. Virtual database linked.');
-          setTimeout(() => navigate(ROUTES.DASHBOARD), 1000);
-        } else {
-          setError('Invalid credentials');
-        }
-      }, 600);
+    // Client-side validation
+    if (password !== confirmPassword) {
+      setError('Security credentials do not match.');
+      setIsLoading(false);
       return;
     }
-    setIsLoading(false);
+
+    if (password.length < 6) {
+      setError('Cryptographic key must be at least 6 characters.');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      // 1. Prioritize creating the account on the live Spring Boot backend API
+      const response = await api.post('/auth/register', {
+        email: email.trim(),
+        password: password,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        roles: [role]
+      });
+
+      setSuccess('Operator profile initialized in master database. Redirecting to Gateway...');
+      setIsLoading(false);
+      
+      // Auto redirect to login page after 1.5s
+      setTimeout(() => navigate(ROUTES.LOGIN), 1500);
+
+    } catch (err) {
+      console.warn("Backend registration offline or error, saving in local secure sandbox database:", err.message);
+
+      // 2. Fallback to Local Virtual Storage Database in LocalStorage
+      setTimeout(() => {
+        setIsLoading(false);
+        const result = registerLocalUser(email, password, firstName, lastName, role);
+        
+        if (result.success) {
+          setSuccess('Secure Sandbox Profile compiled. Redirecting to Gateway...');
+          setTimeout(() => navigate(ROUTES.LOGIN), 1500);
+        } else {
+          setError(result.error);
+        }
+      }, 800);
+    }
   };
 
   return (
@@ -179,10 +162,10 @@ const Login = () => {
               Live Telemetry Core
             </span>
             <h2 className="text-2xl font-black text-white tracking-tight leading-snug">
-              Global Logistics Network Terminal
+              Initialize Operations Node
             </h2>
             <p className="text-xs text-on-surface-variant/70 max-w-sm leading-relaxed">
-              Real-time synchronization with active vehicle nodes, fuel allocation registries, and routing analytics.
+              Register a cryptographic operator profile and assign your clearance level within our global transit matrix.
             </p>
           </div>
 
@@ -212,8 +195,8 @@ const Login = () => {
 
             {/* Dynamic Telemetry Log Feed Overlay */}
             <div className="absolute bottom-2 left-3 text-[9px] font-mono text-white/45 space-y-0.5">
-              <div>&gt; CONNECT_SUITE_ESTABLISHED</div>
-              <div>&gt; SCANNING DEPOT_NODE_ALPHA... ACTIVE</div>
+              <div>&gt; READY_FOR_REGISTRATION_SESSION</div>
+              <div>&gt; AWAITING SECURE OPERATOR UPLINK...</div>
             </div>
           </div>
 
@@ -241,9 +224,9 @@ const Login = () => {
         </div>
       </div>
 
-      {/* RIGHT PANEL: Interactive Form Arena */}
+      {/* RIGHT PANEL: Interactive Registration Form */}
       <div className="w-full lg:w-[55%] flex flex-col justify-center items-center px-6 py-12 z-10 relative overflow-y-auto min-h-screen">
-        <div className="w-full max-w-[460px] space-y-6">
+        <div className="w-full max-w-[500px] space-y-5 my-auto">
 
           {/* Mobile logo branding */}
           <div className="flex flex-col items-center lg:hidden mb-4 space-y-1.5">
@@ -256,12 +239,12 @@ const Login = () => {
             <p className="text-[9px] font-bold uppercase tracking-widest text-[#ff8a00]">Command Infrastructure</p>
           </div>
 
-          <div className="space-y-1.5 text-center lg:text-left">
-            <h2 className="text-2xl font-extrabold tracking-tight text-white">Access Gateway</h2>
-            <p className="text-xs text-on-surface-variant/70">Secure authentication credentials required</p>
+          <div className="space-y-1 text-center lg:text-left">
+            <h2 className="text-2xl font-extrabold tracking-tight text-white">Initialize Profile</h2>
+            <p className="text-xs text-on-surface-variant/70">Create a new cryptographic node access profile</p>
           </div>
 
-          {/* Error and Info Notices */}
+          {/* Error and Success Notices */}
           {error && (
             <div className="p-4 bg-rose-500/10 border border-rose-500/30 text-rose-400 rounded-xl flex items-start gap-3 text-xs animate-shake">
               <span className="material-symbols-outlined text-[18px] shrink-0 mt-0.5">error_outline</span>
@@ -269,17 +252,46 @@ const Login = () => {
             </div>
           )}
 
-          {infoMessage && (
+          {success && (
             <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl flex items-start gap-3 text-xs">
               <span className="material-symbols-outlined text-[18px] shrink-0 mt-0.5">verified_user</span>
-              <span>{infoMessage}</span>
+              <span>{success}</span>
             </div>
           )}
 
-          {/* Frosted Glass login form card */}
-          <div className="glass-card p-8 rounded-2xl space-y-5">
-            <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Frosted Glass registration form card */}
+          <div className="glass-card p-6 md:p-8 rounded-2xl space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               
+              {/* Names row */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="block text-[10px] uppercase tracking-wider font-bold text-on-surface-variant/80" htmlFor="firstName">First Name</label>
+                  <input 
+                    className="input-field w-full h-11 px-4 rounded-lg text-xs" 
+                    id="firstName" 
+                    placeholder="John" 
+                    required 
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                  />
+                </div>
+                
+                <div className="space-y-1.5">
+                  <label className="block text-[10px] uppercase tracking-wider font-bold text-on-surface-variant/80" htmlFor="lastName">Last Name</label>
+                  <input 
+                    className="input-field w-full h-11 px-4 rounded-lg text-xs" 
+                    id="lastName" 
+                    placeholder="Doe" 
+                    required 
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                  />
+                </div>
+              </div>
+
               {/* Email Address */}
               <div className="space-y-1.5">
                 <label className="block text-[10px] uppercase tracking-wider font-bold text-on-surface-variant/80" htmlFor="email">Email Address</label>
@@ -297,87 +309,78 @@ const Login = () => {
                 </div>
               </div>
 
-              {/* Password Key */}
-              <div className="space-y-1.5">
-                <label className="block text-[10px] uppercase tracking-wider font-bold text-on-surface-variant/80" htmlFor="password">Security Password</label>
-                <div className="relative">
-                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/75 text-[18px]">lock</span>
-                  <input 
-                    className="input-field w-full h-11 pl-11 pr-11 rounded-lg text-xs" 
-                    id="password" 
-                    placeholder="••••••••" 
-                    required 
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                  <button className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/70 hover:text-white" onClick={togglePassword} type="button">
-                    <span className="material-symbols-outlined text-[18px]">
-                      {showPassword ? "visibility_off" : "visibility"}
-                    </span>
-                  </button>
-                </div>
-              </div>
-
               {/* Role cards block (Beautiful interactive buttons grid instead of native select dropdown) */}
               <div className="space-y-2">
-                <label className="block text-[10px] uppercase tracking-wider font-bold text-on-surface-variant/80">Command Clearance Role</label>
+                <label className="block text-[10px] uppercase tracking-wider font-bold text-on-surface-variant/80">Requested Role Clearance</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button 
                     type="button" 
                     onClick={() => setRole('ROLE_FLEET_MANAGER')}
-                    className={`role-btn p-3 rounded-lg flex flex-col items-center gap-1.5 text-center cursor-pointer ${role === 'ROLE_FLEET_MANAGER' ? 'active' : ''}`}
+                    className={`role-btn p-3 rounded-lg flex flex-col items-center gap-1 text-center cursor-pointer ${role === 'ROLE_FLEET_MANAGER' ? 'active' : ''}`}
                   >
-                    <span className="material-symbols-outlined text-[20px] text-[#ff8a00]">local_shipping</span>
-                    <span className="text-[10px] font-bold">Fleet Manager</span>
+                    <span className="material-symbols-outlined text-[18px] text-[#ff8a00]">local_shipping</span>
+                    <span className="text-[9px] font-bold">Fleet Manager</span>
                   </button>
 
                   <button 
                     type="button" 
                     onClick={() => setRole('ROLE_DRIVER')}
-                    className={`role-btn p-3 rounded-lg flex flex-col items-center gap-1.5 text-center cursor-pointer ${role === 'ROLE_DRIVER' ? 'active' : ''}`}
+                    className={`role-btn p-3 rounded-lg flex flex-col items-center gap-1 text-center cursor-pointer ${role === 'ROLE_DRIVER' ? 'active' : ''}`}
                   >
-                    <span className="material-symbols-outlined text-[20px] text-cyan-400">route</span>
-                    <span className="text-[10px] font-bold">Dispatcher</span>
+                    <span className="material-symbols-outlined text-[18px] text-cyan-400">route</span>
+                    <span className="text-[9px] font-bold">Dispatcher</span>
                   </button>
 
                   <button 
                     type="button" 
                     onClick={() => setRole('ROLE_SAFETY_OFFICER')}
-                    className={`role-btn p-3 rounded-lg flex flex-col items-center gap-1.5 text-center cursor-pointer ${role === 'ROLE_SAFETY_OFFICER' ? 'active' : ''}`}
+                    className={`role-btn p-3 rounded-lg flex flex-col items-center gap-1 text-center cursor-pointer ${role === 'ROLE_SAFETY_OFFICER' ? 'active' : ''}`}
                   >
-                    <span className="material-symbols-outlined text-[20px] text-emerald-400">gavel</span>
-                    <span className="text-[10px] font-bold">Safety Officer</span>
+                    <span className="material-symbols-outlined text-[18px] text-emerald-400">gavel</span>
+                    <span className="text-[9px] font-bold">Safety Officer</span>
                   </button>
 
                   <button 
                     type="button" 
                     onClick={() => setRole('ROLE_FINANCIAL_ANALYST')}
-                    className={`role-btn p-3 rounded-lg flex flex-col items-center gap-1.5 text-center cursor-pointer ${role === 'ROLE_FINANCIAL_ANALYST' ? 'active' : ''}`}
+                    className={`role-btn p-3 rounded-lg flex flex-col items-center gap-1 text-center cursor-pointer ${role === 'ROLE_FINANCIAL_ANALYST' ? 'active' : ''}`}
                   >
-                    <span className="material-symbols-outlined text-[20px] text-purple-400">analytics</span>
-                    <span className="text-[10px] font-bold">Financial Analyst</span>
+                    <span className="material-symbols-outlined text-[18px] text-purple-400">analytics</span>
+                    <span className="text-[9px] font-bold">Financial Analyst</span>
                   </button>
                 </div>
               </div>
 
-              {/* Remember checkbox */}
-              <div className="flex items-center justify-between text-[11px] font-semibold pt-1">
-                <label className="flex items-center gap-2 cursor-pointer select-none text-on-surface-variant hover:text-white transition-colors">
+              {/* Passwords row */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="block text-[10px] uppercase tracking-wider font-bold text-on-surface-variant/80" htmlFor="password">Security Password</label>
                   <input 
-                    type="checkbox" 
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="w-3.5 h-3.5 rounded border-white/10 bg-[#16161A] text-[#ff8a00] focus:ring-0 cursor-pointer"
+                    className="input-field w-full h-11 px-4 rounded-lg text-xs" 
+                    id="password" 
+                    placeholder="••••••••" 
+                    required 
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                   />
-                  <span>Remember Gateway</span>
-                </label>
-                <a href="#forgot" className="text-indigo-400 hover:text-indigo-300 transition-colors" onClick={(e) => { e.preventDefault(); alert("Access recovery requires operator key validation. Please request your system administrator."); }}>
-                  Recover Key?
-                </a>
+                </div>
+                
+                <div className="space-y-1.5">
+                  <label className="block text-[10px] uppercase tracking-wider font-bold text-on-surface-variant/80" htmlFor="confirmPassword">Confirm Password</label>
+                  <input 
+                    className="input-field w-full h-11 px-4 rounded-lg text-xs" 
+                    id="confirmPassword" 
+                    placeholder="••••••••" 
+                    required 
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                </div>
               </div>
 
-              {/* Submit Sign In */}
+              {/* Submit Sign Up */}
               <button 
                 className="w-full h-11 rounded-lg font-bold flex items-center justify-center gap-2 bg-gradient-to-r from-[#ff8a00] to-[#f47c00] hover:opacity-95 text-black hover:shadow-lg hover:shadow-orange-500/10 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer text-xs mt-2" 
                 type="submit"
@@ -386,21 +389,21 @@ const Login = () => {
                 {isLoading ? (
                   <>
                     <span className="material-symbols-outlined animate-spin text-[16px]">sync</span>
-                    <span>Validating Clearance...</span>
+                    <span>Compiling Credentials...</span>
                   </>
                 ) : (
                   <>
-                    <span>Initialize Session</span>
-                    <span className="material-symbols-outlined text-[16px]">login</span>
+                    <span>Compile Clearance Profile</span>
+                    <span className="material-symbols-outlined text-[16px]">verified_user</span>
                   </>
                 )}
               </button>
             </form>
 
             <div className="text-center pt-2 text-xs font-semibold text-on-surface-variant/70">
-              New node operator?{' '}
-              <Link to="/register" className="text-[#ff8a00] hover:underline">
-                Create Account
+              Already have an account?{' '}
+              <Link to="/login" className="text-[#ff8a00] hover:underline">
+                Sign In
               </Link>
             </div>
           </div>
@@ -411,4 +414,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Register;

@@ -6,6 +6,8 @@ import ERPLayout from './layouts/ERPLayout';
 
 // Pages
 import Login from './pages/Login';
+import Register from './pages/Register';
+import Profile from './pages/Profile';
 import Dashboard from './pages/Dashboard';
 import TripManagement from './pages/TripManagement';
 import VehicleRegistry from './pages/VehicleRegistry';
@@ -31,6 +33,7 @@ function App() {
           {/* Auth pages (no Sidebar) */}
           <Route element={<AuthLayout />}>
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
           </Route>
 
           {/* Protected ERP pages with Sidebar */}
@@ -44,6 +47,7 @@ function App() {
               <Route path="/fuel-expenses" element={<FuelExpenses />} />
               <Route path="/analytics" element={<Reports />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/profile" element={<Profile />} />
             </Route>
           </Route>
 
