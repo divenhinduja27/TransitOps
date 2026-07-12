@@ -2,288 +2,219 @@ import React, { useState } from 'react';
 import Header from '../components/Header';
 
 const Settings = () => {
-  // Mock Settings States
-  const [notifications, setNotifications] = useState({
-    smsAlerts: true,
-    emailSummaries: false,
-    maintenanceAlarms: true,
-    tripUpdates: true
+  // Load configuration settings from localStorage or fallback to blueprint defaults
+  const [depotName, setDepotName] = useState(() => {
+    return localStorage.getItem('erp_depot_name') || 'Gandhinagar Depot GJ4';
   });
 
-  const [departments, setDepartments] = useState({
-    dispatchHubName: 'Region A-12 Control Center',
-    primaryTimezone: 'Asia/Kolkata (IST)',
-    maxHoursPerShift: '12',
-    enableAutoRerouting: true
+  const [currency, setCurrency] = useState(() => {
+    return localStorage.getItem('erp_currency') || 'INR (Rs)';
   });
 
-  const [permissions, setPermissions] = useState([
-    { role: 'Administrator', read: true, write: true, delete: true, dispatch: true },
-    { role: 'Manager', read: true, write: true, delete: false, dispatch: true },
-    { role: 'Dispatcher', read: true, write: false, delete: false, dispatch: true },
-    { role: 'Driver', read: true, write: false, delete: false, dispatch: false }
-  ]);
+  const [distanceUnit, setDistanceUnit] = useState(() => {
+    return localStorage.getItem('erp_distance_unit') || 'Kilometers';
+  });
 
-  const [searchQuery, setSearchQuery] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
   const handleSave = (e) => {
     e.preventDefault();
-    setSuccessMsg('Configurations successfully committed to database.');
+    localStorage.setItem('erp_depot_name', depotName);
+    localStorage.setItem('erp_currency', currency);
+    localStorage.setItem('erp_distance_unit', distanceUnit);
+    setSuccessMsg('System operational profiles successfully saved.');
     setTimeout(() => setSuccessMsg(''), 3000);
   };
 
-  const handleTogglePermission = (index, field) => {
-    setPermissions(prev => prev.map((p, idx) => 
-      idx === index ? { ...p, [field]: !p[field] } : p
-    ));
-  };
+  const depotOptions = [
+    'Gandhinagar Depot GJ4',
+    'Mumbai Port (JNPT)',
+    'Delhi Cargo Hub',
+    'Chennai Dockyard',
+    'Bangalore Depot',
+    'Kolkata Port'
+  ];
+
+  const currencyOptions = [
+    'INR (Rs)',
+    'USD ($)',
+    'EUR (€)',
+    'GBP (£)'
+  ];
+
+  const distanceOptions = [
+    'Kilometers',
+    'Miles',
+    'Nautical Miles'
+  ];
 
   return (
     <>
       <style>{`
         .glass-card {
-            background: var(--bg-card);
-            backdrop-filter: blur(12px);
-            border: 1px solid var(--border-color);
-            transition: all 250ms ease;
+          background: rgba(30, 30, 30, 0.45);
+          backdrop-filter: blur(12px);
+          border: 1px solid #2E2E2E;
         }
-        .form-input {
-            background-color: var(--bg-app);
-            border: 1px solid var(--border-color);
-            color: var(--color-text-primary);
-            width: 100%;
-            height: 40px;
-            padding: 0 12px;
-            border-radius: 6px;
-            outline: none;
-            transition: all 250ms ease;
+        .form-select {
+          background-color: #161616;
+          border: 1px solid #2E2E2E;
+          color: #e6e1e2;
+          width: 100%;
+          height: 46px;
+          padding: 0 16px;
+          border-radius: 8px;
+          outline: none;
+          transition: all 0.2s ease-in-out;
+          font-size: 0.8125rem;
+          cursor: pointer;
+          appearance: none;
+          background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+          background-repeat: no-repeat;
+          background-position: right 16px center;
+          background-size: 16px;
         }
-        .form-input:focus {
-            border-color: #ff8a00;
+        .form-select:focus {
+          border-color: #ff8a00;
+          box-shadow: 0 0 0 2px rgba(255, 138, 0, 0.1);
+        }
+        .glow-bullet {
+          box-shadow: 0 0 8px #ff8a00;
         }
       `}</style>
 
-      <main className="ml-[260px] min-h-screen flex flex-col bg-[var(--bg-app)] text-[var(--color-text-secondary)] transition-all duration-200">
+      <main className="ml-[260px] min-h-screen flex flex-col bg-[#111111] text-[#e6e1e2]">
         <Header 
-          title="Command Settings" 
-          subtitle="Configure system permissions, alerts protocols, and regional depots"
-          searchPlaceholder="Search system config keys..."
-          searchValue={searchQuery}
-          onSearchChange={(e) => setSearchQuery(e.target.value)}
+          title="Settings & Config" 
+          actions={
+            <div className="flex items-center gap-3 mr-4">
+              <span className="text-sm font-semibold text-white">Raven K.</span>
+              <span className="bg-sky-500/10 text-sky-400 border border-sky-500/30 text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full">
+                Dispatcher
+              </span>
+            </div>
+          }
         />
 
-        <form onSubmit={handleSave} className="p-6 space-y-6 flex-grow">
+        <div className="p-8 space-y-6 flex-grow max-w-5xl mx-auto w-full">
           {successMsg && (
-            <div className="p-4 bg-green-500/10 border border-green-500/30 text-green-400 rounded-lg text-sm flex items-center gap-3">
-              <span className="material-symbols-outlined">check_circle</span>
-              <span>{successMsg}</span>
+            <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl text-xs flex items-center gap-3 animate-fade-in">
+              <span className="material-symbols-outlined text-[16px]">check_circle</span>
+              <span className="font-semibold">{successMsg}</span>
             </div>
           )}
 
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            {/* RBAC Table */}
-            <div className="glass-card p-6 rounded-xl border border-[var(--border-color)] space-y-4">
-              <h3 className="text-base font-bold border-b border-[var(--border-color)] pb-3 flex items-center gap-2 text-[var(--color-text-primary)]">
-                <span className="material-symbols-outlined text-[#ff8a00]">admin_panel_settings</span>
-                Role-Based Access Control (RBAC)
-              </h3>
-              <p className="text-xs text-[var(--color-text-muted)]">Configure authorization policy parameters across operational groups.</p>
-              
-              <div className="overflow-x-auto pt-2">
-                <table className="w-full text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-[var(--border-color)] text-[var(--color-text-muted)] text-xs font-bold uppercase">
-                      <th className="py-2 px-1">Role</th>
-                      <th className="py-2 text-center">Read</th>
-                      <th className="py-2 text-center">Write</th>
-                      <th className="py-2 text-center">Delete</th>
-                      <th className="py-2 text-center">Dispatch</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[var(--border-color)]/40 text-[var(--color-text-secondary)]">
-                    {permissions.map((p, idx) => (
-                      <tr key={p.role} className="hover:bg-[var(--bg-app)] transition-colors">
-                        <td className="py-3 px-1 font-semibold">{p.role}</td>
-                        <td className="py-3 text-center">
-                          <input 
-                            type="checkbox" 
-                            checked={p.read} 
-                            onChange={() => handleTogglePermission(idx, 'read')}
-                            className="w-4 h-4 rounded border-[var(--border-color)] bg-[var(--bg-app)] text-[#ff8a00] focus:ring-0" 
-                          />
-                        </td>
-                        <td className="py-3 text-center">
-                          <input 
-                            type="checkbox" 
-                            checked={p.write} 
-                            onChange={() => handleTogglePermission(idx, 'write')}
-                            className="w-4 h-4 rounded border-[var(--border-color)] bg-[var(--bg-app)] text-[#ff8a00] focus:ring-0" 
-                          />
-                        </td>
-                        <td className="py-3 text-center">
-                          <input 
-                            type="checkbox" 
-                            checked={p.delete} 
-                            disabled={p.role === 'Administrator'}
-                            onChange={() => handleTogglePermission(idx, 'delete')}
-                            className="w-4 h-4 rounded border-[var(--border-color)] bg-[var(--bg-app)] text-[#ff8a00] focus:ring-0 disabled:opacity-30" 
-                          />
-                        </td>
-                        <td className="py-3 text-center">
-                          <input 
-                            type="checkbox" 
-                            checked={p.dispatch} 
-                            onChange={() => handleTogglePermission(idx, 'dispatch')}
-                            className="w-4 h-4 rounded border-[var(--border-color)] bg-[var(--bg-app)] text-[#ff8a00] focus:ring-0" 
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div className="glass-card p-6 rounded-xl border border-[var(--border-color)] space-y-4">
-              <h3 className="text-base font-bold border-b border-[var(--border-color)] pb-3 flex items-center gap-2 text-[var(--color-text-primary)]">
-                <span className="material-symbols-outlined text-[#ff8a00]">business</span>
-                Department & Regional Node Settings
-              </h3>
-              
-              <div className="space-y-4 pt-2">
-                <div className="space-y-1">
-                  <label className="text-xs text-[var(--color-text-muted)] font-bold uppercase">Dispatch Hub Name</label>
-                  <input
-                    className="form-input"
-                    type="text"
-                    required
-                    value={departments.dispatchHubName}
-                    onChange={(e) => setDepartments({ ...departments, dispatchHubName: e.target.value })}
-                  />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
+            {/* General Settings Column */}
+            <div className="glass-card p-8 rounded-2xl border border-[#2E2E2E] flex flex-col justify-between">
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#ff8a00] mb-1">
+                    General
+                  </h3>
+                  <p className="text-[10px] text-zinc-400">Configure global parameters and depot metrics.</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs text-[var(--color-text-muted)] font-bold uppercase">Primary Timezone</label>
+                <form onSubmit={handleSave} className="space-y-5">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Depot Name</label>
                     <select
-                      className="form-input bg-[var(--bg-app)]"
-                      value={departments.primaryTimezone}
-                      onChange={(e) => setDepartments({ ...departments, primaryTimezone: e.target.value })}
+                      className="form-select"
+                      value={depotName}
+                      onChange={(e) => setDepotName(e.target.value)}
                     >
-                      <option value="Asia/Kolkata (IST)">Asia/Kolkata (IST)</option>
-                      <option value="UTC/GMT">UTC/GMT</option>
-                      <option value="US/Eastern">US/Eastern</option>
+                      {depotOptions.map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
                     </select>
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-xs text-[var(--color-text-muted)] font-bold uppercase">Max Shift Length (hours)</label>
-                    <input
-                      className="form-input"
-                      type="number"
-                      required
-                      value={departments.maxHoursPerShift}
-                      onChange={(e) => setDepartments({ ...departments, maxHoursPerShift: e.target.value })}
-                    />
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-3 pt-2">
-                  <input
-                    id="autoReroute"
-                    type="checkbox"
-                    checked={departments.enableAutoRerouting}
-                    onChange={(e) => setDepartments({ ...departments, enableAutoRerouting: e.target.checked })}
-                    className="w-4 h-4 rounded border-[var(--border-color)] bg-[var(--bg-app)] text-[#ff8a00] focus:ring-0"
-                  />
-                  <label htmlFor="autoReroute" className="text-xs text-[var(--color-text-secondary)] select-none">
-                    Enable Autonomous Emergency Rerouting Protocols
-                  </label>
-                </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Currency</label>
+                    <select
+                      className="form-select"
+                      value={currency}
+                      onChange={(e) => setCurrency(e.target.value)}
+                    >
+                      {currencyOptions.map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Distance Unit</label>
+                    <select
+                      className="form-select"
+                      value={distanceUnit}
+                      onChange={(e) => setDistanceUnit(e.target.value)}
+                    >
+                      {distanceOptions.map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="pt-3">
+                    <button
+                      type="submit"
+                      className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-8 py-2.5  rounded-full font-bold hover:shadow-lg hover:shadow-blue-500/10 active:scale-95 transition-all text-xs cursor-pointer duration-200"
+                    >
+                      Save changes
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
 
-            {/* Notification settings */}
-            <div className="glass-card p-6 rounded-xl border border-[var(--border-color)] space-y-4">
-              <h3 className="text-base font-bold border-b border-[var(--border-color)] pb-3 flex items-center gap-2 text-[var(--color-text-primary)]">
-                <span className="material-symbols-outlined text-[#ff8a00]">notifications_active</span>
-                Automated Alert Summaries & Notifications
-              </h3>
-              <p className="text-xs text-[var(--color-text-muted)]">Configure alert routing logic for dispatch pipelines.</p>
-
-              <div className="space-y-4 pt-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="text-sm font-semibold text-[var(--color-text-primary)]">SMS Critical Alerts</label>
-                    <p className="text-[10px] text-[var(--color-text-muted)]">Ping dispatch operators on driver license expiry/suspension.</p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={notifications.smsAlerts}
-                    onChange={(e) => setNotifications({ ...notifications, smsAlerts: e.target.checked })}
-                    className="w-4 h-4 rounded border-[var(--border-color)] bg-[var(--bg-app)] text-[#ff8a00] focus:ring-0"
-                  />
+            {/* Profile/System Summary Column */}
+            <div className="glass-card p-8 rounded-2xl border border-[#2E2E2E] flex flex-col justify-between relative overflow-hidden bg-gradient-to-br from-[#1E1E1E] to-[#121212]">
+              {/* background highlights */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#ff8a00]/5 rounded-full blur-2xl pointer-events-none"></div>
+              
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#ff8a00] mb-1">
+                    System Metrics Preview
+                  </h3>
+                  <p className="text-[10px] text-zinc-400">Real-time status display of selected ERP parameters.</p>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="text-sm font-semibold text-[var(--color-text-primary)]">Email Summaries</label>
-                    <p className="text-[10px] text-[var(--color-text-muted)]">Send daily fuel opex and maintenance status logs.</p>
+                <div className="space-y-4 pt-2">
+                  <div className="flex justify-between items-center py-3 border-b border-zinc-800">
+                    <span className="text-xs text-zinc-400">Operational Node</span>
+                    <span className="text-xs text-white font-semibold">{depotName}</span>
                   </div>
-                  <input
-                    type="checkbox"
-                    checked={notifications.emailSummaries}
-                    onChange={(e) => setNotifications({ ...notifications, emailSummaries: e.target.checked })}
-                    className="w-4 h-4 rounded border-[var(--border-color)] bg-[var(--bg-app)] text-[#ff8a00] focus:ring-0"
-                  />
-                </div>
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="text-sm font-semibold text-[var(--color-text-primary)]">Maintenance Alarms</label>
-                    <p className="text-[10px] text-[var(--color-text-muted)]">Flag vehicles that exceed 30 days without safety inspections.</p>
+                  <div className="flex justify-between items-center py-3 border-b border-zinc-800">
+                    <span className="text-xs text-zinc-400">Billing Currency</span>
+                    <span className="text-xs text-white font-semibold font-mono">{currency}</span>
                   </div>
-                  <input
-                    type="checkbox"
-                    checked={notifications.maintenanceAlarms}
-                    onChange={(e) => setNotifications({ ...notifications, maintenanceAlarms: e.target.checked })}
-                    className="w-4 h-4 rounded border-[var(--border-color)] bg-[var(--bg-app)] text-[#ff8a00] focus:ring-0"
-                  />
-                </div>
 
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="text-sm font-semibold text-[var(--color-text-primary)]">Real-time Trip Updates</label>
-                    <p className="text-[10px] text-[var(--color-text-muted)]">Push web notification when a route changes phase.</p>
+                  <div className="flex justify-between items-center py-3 border-b border-zinc-800">
+                    <span className="text-xs text-zinc-400">Metric Scaling</span>
+                    <span className="text-xs text-[#ff8a00] font-semibold">{distanceUnit}</span>
                   </div>
-                  <input
-                    type="checkbox"
-                    checked={notifications.tripUpdates}
-                    onChange={(e) => setNotifications({ ...notifications, tripUpdates: e.target.checked })}
-                    className="w-4 h-4 rounded border-[var(--border-color)] bg-[var(--bg-app)] text-[#ff8a00] focus:ring-0"
-                  />
+
+                  <div className="flex justify-between items-center py-3">
+                    <span className="text-xs text-zinc-400">System Link Status</span>
+                    <span className="text-xs text-emerald-400 font-bold flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping glow-bullet"></span>
+                      Synchronized
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            {/* Save Options */}
-            <div className="glass-card p-6 rounded-xl border border-[var(--border-color)] flex flex-col justify-center items-center text-center space-y-4">
-              <span className="material-symbols-outlined text-[48px] text-[#ff8a00] animate-pulse">settings</span>
-              <div>
-                <h4 className="font-bold text-sm text-[var(--color-text-primary)]">Save Console Settings</h4>
-                <p className="text-xs text-[var(--color-text-muted)] max-w-xs mt-1">
-                  Commit and deploy system changes across the local and remote logistics dispatch network.
+
+              <div className="bg-[#161616] p-4 rounded-xl border border-[#2E2E2E] flex gap-3 text-[10px] text-zinc-400 items-start leading-relaxed">
+                <span className="material-symbols-outlined text-[#ff8a00] text-[18px] shrink-0">info</span>
+                <p>
+                  These config properties govern routing calculations, fuel expense summaries, and billing computations throughout the dashboard interface.
                 </p>
               </div>
-              <button
-                type="submit"
-                className="bg-[#ff8a00] text-black px-6 py-2.5 rounded-full font-bold hover:opacity-90 active:scale-95 transition-all text-sm cursor-pointer"
-              >
-                Commit Changes
-              </button>
             </div>
           </div>
-        </form>
+        </div>
       </main>
     </>
   );
