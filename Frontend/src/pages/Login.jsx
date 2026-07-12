@@ -8,7 +8,6 @@ const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('ROLE_FLEET_MANAGER');
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
@@ -48,27 +47,27 @@ const Login = () => {
         password: password
       });
 
-      const { accessToken, roles } = response.data;
-      
-      // Verify that the user has the selected role
-      const hasSelectedRole = roles && (roles.includes(role) || roles.includes(role.toUpperCase()));
-      if (!hasSelectedRole) {
-        setError('Invalid credentials');
-        setIsLoading(false);
-        return;
-      }
+      const { accessToken, roles, firstName, lastName } = response.data;
+      const userRole = roles && roles.length > 0 ? roles[0] : 'ROLE_DRIVER';
       
       localStorage.setItem('token', accessToken);
       localStorage.setItem('user', JSON.stringify({
         email: email.trim(),
-        role: role,
-        firstName: email.split('@')[0],
-        lastName: ''
+        role: userRole,
+        firstName: firstName || email.split('@')[0],
+        lastName: lastName || ''
       }));
 
       setInfoMessage('API connection authenticated. Synced with database cluster.');
       setTimeout(() => navigate(ROUTES.DASHBOARD), 800);
     } catch (err) {
+      if (err.response) {
+        // Server replied with an error (e.g. 401 Unauthorized / invalid credentials)
+        setError(err.response.data?.message || err.response.data || 'Invalid credentials');
+        setIsLoading(false);
+        return;
+      }
+
       console.warn("Backend auth offline or invalid credentials, checking virtual secure sandbox:", err.message);
 
       // 2. Fallback to Local Virtual Database in LocalStorage
@@ -77,12 +76,6 @@ const Login = () => {
         const result = authenticateLocalUser(email, password);
         
         if (result.success) {
-          // Verify that selected login role matches registered role
-          if (result.user.role !== role) {
-            setError('Invalid credentials');
-            return;
-          }
-          
           localStorage.setItem('token', 'mock-transitops-erp-token');
           localStorage.setItem('user', JSON.stringify({
             email: result.user.email,
@@ -319,47 +312,7 @@ const Login = () => {
                 </div>
               </div>
 
-              {/* Role cards block (Beautiful interactive buttons grid instead of native select dropdown) */}
-              <div className="space-y-2">
-                <label className="block text-[10px] uppercase tracking-wider font-bold text-on-surface-variant/80">Command Clearance Role</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button 
-                    type="button" 
-                    onClick={() => setRole('ROLE_FLEET_MANAGER')}
-                    className={`role-btn p-3 rounded-lg flex flex-col items-center gap-1.5 text-center cursor-pointer ${role === 'ROLE_FLEET_MANAGER' ? 'active' : ''}`}
-                  >
-                    <span className="material-symbols-outlined text-[20px] text-[#ff8a00]">local_shipping</span>
-                    <span className="text-[10px] font-bold">Fleet Manager</span>
-                  </button>
 
-                  <button 
-                    type="button" 
-                    onClick={() => setRole('ROLE_DRIVER')}
-                    className={`role-btn p-3 rounded-lg flex flex-col items-center gap-1.5 text-center cursor-pointer ${role === 'ROLE_DRIVER' ? 'active' : ''}`}
-                  >
-                    <span className="material-symbols-outlined text-[20px] text-cyan-400">route</span>
-                    <span className="text-[10px] font-bold">Dispatcher</span>
-                  </button>
-
-                  <button 
-                    type="button" 
-                    onClick={() => setRole('ROLE_SAFETY_OFFICER')}
-                    className={`role-btn p-3 rounded-lg flex flex-col items-center gap-1.5 text-center cursor-pointer ${role === 'ROLE_SAFETY_OFFICER' ? 'active' : ''}`}
-                  >
-                    <span className="material-symbols-outlined text-[20px] text-emerald-400">gavel</span>
-                    <span className="text-[10px] font-bold">Safety Officer</span>
-                  </button>
-
-                  <button 
-                    type="button" 
-                    onClick={() => setRole('ROLE_FINANCIAL_ANALYST')}
-                    className={`role-btn p-3 rounded-lg flex flex-col items-center gap-1.5 text-center cursor-pointer ${role === 'ROLE_FINANCIAL_ANALYST' ? 'active' : ''}`}
-                  >
-                    <span className="material-symbols-outlined text-[20px] text-purple-400">analytics</span>
-                    <span className="text-[10px] font-bold">Financial Analyst</span>
-                  </button>
-                </div>
-              </div>
 
               {/* Remember checkbox */}
               <div className="flex items-center justify-between text-[11px] font-semibold pt-1">

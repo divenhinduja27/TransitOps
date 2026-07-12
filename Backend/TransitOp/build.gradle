@@ -37,3 +37,12 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+tasks.withType(JavaCompile).configureEach {
+	options.fork = true
+	options.forkOptions.jvmArgs = ["-Xmx192m", "-XX:+UseSerialGC", "-XX:ReservedCodeCacheSize=128m"]
+}
+
+bootRun {
+	jvmArgs = ["-Xmx256m", "-XX:+UseSerialGC", "-XX:TieredStopAtLevel=1"]
+}

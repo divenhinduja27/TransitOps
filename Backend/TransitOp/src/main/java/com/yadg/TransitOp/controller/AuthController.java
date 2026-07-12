@@ -57,10 +57,15 @@ public class AuthController {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toSet());
 
+        User user = userRepository.findByEmail(loginRequest.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found: " + loginRequest.getEmail()));
+
         return ResponseEntity.ok(AuthResponse.builder()
                 .accessToken(jwt)
                 .email(loginRequest.getEmail())
                 .roles(roles)
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
                 .build());
     }
 
@@ -107,9 +112,15 @@ public class AuthController {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toSet());
 
+        String email = authentication.getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found: " + email));
+
         return ResponseEntity.ok(AuthResponse.builder()
-                .email(authentication.getName())
+                .email(email)
                 .roles(roles)
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
                 .build());
     }
 }

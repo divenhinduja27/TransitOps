@@ -68,6 +68,13 @@ const Register = () => {
       setTimeout(() => navigate(ROUTES.LOGIN), 1500);
 
     } catch (err) {
+      if (err.response) {
+        // Backend replied with a validation error or status error
+        setError(err.response.data?.message || err.response.data || 'Registration failed.');
+        setIsLoading(false);
+        return;
+      }
+
       console.warn("Backend registration offline or error, saving in local secure sandbox database:", err.message);
 
       // 2. Fallback to Local Virtual Storage Database in LocalStorage
