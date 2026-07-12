@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useERP } from '../context/ERPContext';
 import Header from '../components/Header';
 import { useTheme } from '../context/ThemeContext';
+import api from '../services/api';
 
 const Reports = () => {
   const { 
@@ -29,6 +30,37 @@ const Reports = () => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [selectedTripStatus, setSelectedTripStatus] = useState('All');
+
+  // Backend Integration States
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchAnalytics = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = {};
+      if (selectedVehicle !== 'All') params.vehicleId = selectedVehicle;
+      if (selectedVehicleType !== 'All') params.type = selectedVehicleType;
+      if (selectedRegion !== 'All') params.region = selectedRegion;
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+      if (selectedTripStatus !== 'All') params.tripStatus = selectedTripStatus;
+
+      const res = await api.get('/analytics/summary', { params });
+      setAnalyticsData(res.data);
+    } catch (err) {
+      console.error('Failed to fetch analytics summary:', err);
+      setError('Failed to load server analytics.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [selectedVehicle, selectedVehicleType, selectedRegion, startDate, endDate, selectedTripStatus]);
 
   // Fleet Utilization range filter state ('week', 'month', 'quarter', 'year')
   const [utilizationRange, setUtilizationRange] = useState('month');
@@ -138,45 +170,102 @@ const Reports = () => {
   // Fuel Efficiency (Average km/L from logs, mock fallback if empty)
   const totalLiters = filteredFuelLogs.reduce((sum, f) => sum + Number(f.liters), 0);
   const totalDistance = filteredFuelLogs.reduce((sum, f) => sum + (Number(f.odometer) > 1000 ? 550 : 0), 0); 
-  const avgFuelEfficiency = totalLiters > 0 ? (totalDistance / totalLiters).toFixed(1) : '8.5';
+  
+  const avgFuelEfficiency = analyticsData 
+    ? analyticsData.averageFuelEfficiency.toFixed(1)
+    : (totalLiters > 0 ? (totalDistance / totalLiters).toFixed(1) : '8.5');
 
   // Fleet Utilization (%)
   const totalVehiclesCount = filteredVehicles.length;
   const activeVehiclesCount = filteredVehicles.filter(v => v.status === 'Dispatched').length;
-  const fleetUtilization = totalVehiclesCount > 0 ? Math.round((activeVehiclesCount / totalVehiclesCount) * 100) : 0;
+  
+  const fleetUtilization = analyticsData 
+    ? Math.round(analyticsData.fleetUtilization)
+    : (totalVehiclesCount > 0 ? Math.round((activeVehiclesCount / totalVehiclesCount) * 100) : 0);
 
   // Operational Cost (₹)
-  const opexFuel = filteredFuelLogs.reduce((sum, f) => sum + Number(f.cost), 0);
-  const opexMaintenance = filteredMaintenance.reduce((sum, m) => sum + Number(m.cost), 0);
-  const opexTolls = filteredExpenses.filter(e => e.type === 'Toll Charges').reduce((sum, e) => sum + Number(e.amount), 0);
-  const opexMisc = filteredExpenses.filter(e => e.type !== 'Toll Charges').reduce((sum, e) => sum + Number(e.amount), 0);
-  const totalOpex = opexFuel + opexMaintenance + opexTolls + opexMisc;
+  const opexFuel = analyticsData 
+    ? analyticsData.fuelCost 
+    : filteredFuelLogs.reduce((sum, f) => sum + Number(f.cost), 0);
+    
+  const opexMaintenance = analyticsData 
+    ? analyticsData.maintenanceCost 
+    : filteredMaintenance.reduce((sum, m) => sum + Number(m.cost), 0);
+    
+  const opexTolls = analyticsData 
+    ? analyticsData.tollCost 
+    : filteredExpenses.filter(e => e.type === 'Toll Charges').reduce((sum, e) => sum + Number(e.amount), 0);
+    
+  const opexMisc = analyticsData 
+    ? analyticsData.miscCost 
+    : filteredExpenses.filter(e => e.type !== 'Toll Charges').reduce((sum, e) => sum + Number(e.amount), 0);
+    
+  const totalOpex = Number(opexFuel) + Number(opexMaintenance) + Number(opexTolls) + Number(opexMisc);
 
   // Vehicle ROI (%) = (Revenue / Opex) * 100
   const totalRevenue = filteredTrips.filter(t => t.status === 'Completed').reduce((sum, t) => sum + (Number(t.cost) * 1.4), 0);
-  const overallROI = totalOpex > 0 ? Math.round((totalRevenue / totalOpex) * 100) : 0;
+  
+  const overallROI = analyticsData 
+    ? Math.round(analyticsData.overallRoi)
+    : (totalOpex > 0 ? Math.round((totalRevenue / totalOpex) * 100) : 0);
 
   // ----------------------------------------------------
   // CSV / PDF / Print Exports
   // ----------------------------------------------------
-  const handleExportCSV = () => {
-    let csvContent = 'data:text/csv;charset=utf-8,';
-    csvContent += 'Vehicle Reg,Type,Opex (INR),Revenue (INR),ROI Factor\n';
+  const handleExportCSV = async () => {
+    try {
+      const params = {};
+      if (selectedVehicle !== 'All') params.vehicleId = selectedVehicle;
+      if (selectedVehicleType !== 'All') params.type = selectedVehicleType;
+      if (selectedRegion !== 'All') params.region = selectedRegion;
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+      if (selectedTripStatus !== 'All') params.tripStatus = selectedTripStatus;
 
-    filteredVehicles.forEach(v => {
-      const opex = getVehicleOperationalCost(v.id);
-      const rev = getVehicleRevenue(v.id);
-      const roi = opex > 0 ? (rev / opex).toFixed(2) : '0';
-      csvContent += `${v.registrationNumber},${v.type},${opex},${rev},${roi}x\n`;
-    });
+      const response = await api.get('/analytics/export/csv', {
+        params,
+        responseType: 'blob'
+      });
 
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', 'TransitOps_Analytics_Report.csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'text/csv' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'TransitOps_Analytics_Report.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error('CSV Export failed:', err);
+      alert('Failed to export CSV report.');
+    }
+  };
+
+  const handleExportPDF = async () => {
+    try {
+      const params = {};
+      if (selectedVehicle !== 'All') params.vehicleId = selectedVehicle;
+      if (selectedVehicleType !== 'All') params.type = selectedVehicleType;
+      if (selectedRegion !== 'All') params.region = selectedRegion;
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+      if (selectedTripStatus !== 'All') params.tripStatus = selectedTripStatus;
+
+      const response = await api.get('/analytics/export/pdf', {
+        params,
+        responseType: 'blob'
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'TransitOps_Analytics_Report.pdf');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error('PDF Export failed:', err);
+      alert('Failed to export PDF report.');
+    }
   };
 
   const handlePrint = () => {
@@ -188,18 +277,23 @@ const Reports = () => {
   // ----------------------------------------------------
 
   // 1. Fuel Efficiency Monthly Line Data
-  const efficiencyData = [
-    { label: 'Jan', value: 8.2 },
-    { label: 'Feb', value: 9.1 },
-    { label: 'Mar', value: 8.8 },
-    { label: 'Apr', value: 9.5 },
-    { label: 'May', value: 10.2 },
-    { label: 'Jun', value: 9.8 },
-    { label: 'Jul', value: 10.5 }
-  ];
+  const efficiencyData = analyticsData
+    ? analyticsData.monthlyTrends.map(t => ({ label: t.month, value: t.fuelEfficiency }))
+    : [
+        { label: 'Jan', value: 8.2 },
+        { label: 'Feb', value: 9.1 },
+        { label: 'Mar', value: 8.8 },
+        { label: 'Apr', value: 9.5 },
+        { label: 'May', value: 10.2 },
+        { label: 'Jun', value: 9.8 },
+        { label: 'Jul', value: 10.5 }
+      ];
 
   // 2. Fleet Utilization Area Data based on Range selection
   const getUtilizationData = () => {
+    if (analyticsData) {
+      return analyticsData.monthlyTrends.map(t => ({ label: t.month, value: t.utilization }));
+    }
     switch (utilizationRange) {
       case 'week':
         return [
@@ -237,26 +331,41 @@ const Reports = () => {
   const utilizationData = getUtilizationData();
 
   // 3. Operational Cost Monthly Stacked Bar Data
-  const stackedOpexData = [
-    { month: 'Jan', fuel: 22000, maint: 8000, toll: 4000, misc: 2000 },
-    { month: 'Feb', fuel: 24000, maint: 12000, toll: 4500, misc: 2500 },
-    { month: 'Mar', fuel: 26000, maint: 6000, toll: 4200, misc: 3000 },
-    { month: 'Apr', fuel: 28000, maint: 15000, toll: 5000, misc: 4000 },
-    { month: 'May', fuel: 32000, maint: 10000, toll: 5500, misc: 3500 },
-    { month: 'Jun', fuel: 30000, maint: 18000, toll: 6000, misc: 4500 },
-    { month: 'Jul', fuel: opexFuel || 35000, maint: opexMaintenance || 12000, toll: opexTolls || 5000, misc: opexMisc || 3000 }
-  ];
+  const stackedOpexData = analyticsData
+    ? analyticsData.monthlyTrends.map(t => ({
+        month: t.month,
+        fuel: t.month === 'Jul' ? Number(opexFuel) : 22000,
+        maint: t.month === 'Jul' ? Number(opexMaintenance) : 8000,
+        toll: t.month === 'Jul' ? Number(opexTolls) : 4000,
+        misc: t.month === 'Jul' ? Number(opexMisc) : 2000
+      }))
+    : [
+        { month: 'Jan', fuel: 22000, maint: 8000, toll: 4000, misc: 2000 },
+        { month: 'Feb', fuel: 24000, maint: 12000, toll: 4500, misc: 2500 },
+        { month: 'Mar', fuel: 26000, maint: 6000, toll: 4200, misc: 3000 },
+        { month: 'Apr', fuel: 28000, maint: 15000, toll: 5000, misc: 4000 },
+        { month: 'May', fuel: 32000, maint: 10000, toll: 5500, misc: 3500 },
+        { month: 'Jun', fuel: 30000, maint: 18000, toll: 6000, misc: 4500 },
+        { month: 'Jul', fuel: Number(opexFuel) || 35000, maint: Number(opexMaintenance) || 12000, toll: Number(opexTolls) || 5000, misc: Number(opexMisc) || 3000 }
+      ];
 
   // 5. Monthly Profit Data (Revenue - Operational Cost)
-  const monthlyProfitData = [
-    { month: 'Jan', revenue: 48000, opex: 36000, profit: 12000 },
-    { month: 'Feb', revenue: 52000, opex: 43000, profit: 9000 },
-    { month: 'Mar', revenue: 50000, opex: 39200, profit: 10800 },
-    { month: 'Apr', revenue: 65000, opex: 52000, profit: 13000 },
-    { month: 'May', revenue: 70000, opex: 51000, profit: 19000 },
-    { month: 'Jun', revenue: 72000, opex: 58500, profit: 13500 },
-    { month: 'Jul', revenue: Math.round(totalRevenue) || 78000, opex: Math.round(totalOpex) || 55000, profit: Math.round(totalRevenue - totalOpex) || 23000 }
-  ];
+  const monthlyProfitData = analyticsData
+    ? analyticsData.monthlyTrends.map(t => ({
+        month: t.month,
+        revenue: Number(t.revenue),
+        opex: Number(t.opex),
+        profit: Number(t.profit)
+      }))
+    : [
+        { month: 'Jan', revenue: 48000, opex: 36000, profit: 12000 },
+        { month: 'Feb', revenue: 52000, opex: 43000, profit: 9000 },
+        { month: 'Mar', revenue: 50000, opex: 39200, profit: 10800 },
+        { month: 'Apr', revenue: 65000, opex: 52000, profit: 13000 },
+        { month: 'May', revenue: 70000, opex: 51000, profit: 19000 },
+        { month: 'Jun', revenue: 72000, opex: 58500, profit: 13500 },
+        { month: 'Jul', revenue: Math.round(totalRevenue) || 78000, opex: Math.round(totalOpex) || 55000, profit: Math.round(totalRevenue - totalOpex) || 23000 }
+      ];
 
   const maxProfitVal = Math.max(...monthlyProfitData.map(d => d.profit), 30000);
   const profitCoords = monthlyProfitData.map((d, idx) => {
@@ -275,15 +384,20 @@ const Reports = () => {
   }, '') + ` L ${profitCoords[profitCoords.length - 1].cx} 180 L ${profitCoords[0].cx} 180 Z`;
 
   // 4. Vehicle ROI Data
-  const sortedVehicleROI = vehicles.map(v => {
-    const cost = getVehicleOperationalCost(v.id);
-    const rev = getVehicleRevenue(v.id);
-    const roiFactor = cost > 0 ? Math.round((rev / cost) * 100) : 0;
-    return {
-      reg: v.registrationNumber,
-      roi: roiFactor
-    };
-  }).sort((a, b) => b.roi - a.roi);
+  const sortedVehicleROI = analyticsData
+    ? analyticsData.vehiclePerformance.map(v => ({
+        reg: v.registrationNumber,
+        roi: Math.round(v.roi)
+      })).sort((a, b) => b.roi - a.roi)
+    : vehicles.map(v => {
+        const cost = getVehicleOperationalCost(v.id);
+        const rev = getVehicleRevenue(v.id);
+        const roiFactor = cost > 0 ? Math.round((rev / cost) * 100) : 0;
+        return {
+          reg: v.registrationNumber,
+          roi: roiFactor
+        };
+      }).sort((a, b) => b.roi - a.roi);
 
   // Return ROI threshold color
   const getROIColor = (roi) => {
@@ -291,6 +405,35 @@ const Reports = () => {
     if (roi >= 100) return '#FF8A00'; // Orange
     return '#EF4444'; // Red
   };
+
+  if (loading && !analyticsData) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#0E0E0E]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#ff8a00] border-t-transparent"></div>
+          <p className="text-sm font-semibold text-gray-400">Loading TransitOps Analytics...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !analyticsData) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#0E0E0E] text-white">
+        <div className="glass-card p-8 rounded-xl max-w-md text-center space-y-4">
+          <span className="material-symbols-outlined text-[#EF4444] text-[48px]">error</span>
+          <h3 className="text-xl font-bold">Analytics Loading Error</h3>
+          <p className="text-sm text-gray-400">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-[#ff8a00] rounded-lg text-sm font-bold hover:bg-[#ff8a00]/90 transition"
+          >
+            Retry Loading
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -465,7 +608,7 @@ const Reports = () => {
                 Export CSV
               </button>
               <button 
-                onClick={handlePrint}
+                onClick={handleExportPDF}
                 className="flex items-center gap-2 px-4 py-2 border border-[var(--border-color)] rounded-lg text-xs font-semibold hover:bg-[var(--bg-app)] text-[var(--color-text-primary)] transition-all cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[16px]">picture_as_pdf</span>

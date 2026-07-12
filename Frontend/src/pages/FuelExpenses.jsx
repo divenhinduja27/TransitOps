@@ -37,18 +37,23 @@ const FuelExpenses = () => {
   const [expenseError, setExpenseError] = useState('');
   const [expenseSuccess, setExpenseSuccess] = useState('');
 
-  const handleFuelSubmit = (e) => {
+  const [submittingFuel, setSubmittingFuel] = useState(false);
+  const [submittingExpense, setSubmittingExpense] = useState(false);
+
+  const handleFuelSubmit = async (e) => {
     e.preventDefault();
     setFuelError('');
     setFuelSuccess('');
+    setSubmittingFuel(true);
 
     if (!fuelData.vehicleId) {
       setFuelError('Please select a vehicle.');
+      setSubmittingFuel(false);
       return;
     }
 
     try {
-      addFuelLog(fuelData);
+      await addFuelLog(fuelData);
       setFuelSuccess('Fuel log successfully added.');
       setFuelData({
         vehicleId: '',
@@ -58,22 +63,26 @@ const FuelExpenses = () => {
         odometer: ''
       });
     } catch (err) {
-      setFuelError(err.message);
+      setFuelError(err.response?.data?.error || err.message || 'Failed to save fuel log.');
+    } finally {
+      setSubmittingFuel(false);
     }
   };
 
-  const handleExpenseSubmit = (e) => {
+  const handleExpenseSubmit = async (e) => {
     e.preventDefault();
     setExpenseError('');
     setExpenseSuccess('');
+    setSubmittingExpense(true);
 
     if (!expenseData.vehicleId) {
       setExpenseError('Please select a vehicle.');
+      setSubmittingExpense(false);
       return;
     }
 
     try {
-      addExpense(expenseData);
+      await addExpense(expenseData);
       setExpenseSuccess('Expense successfully recorded.');
       setExpenseData({
         vehicleId: '',
@@ -83,7 +92,9 @@ const FuelExpenses = () => {
         description: ''
       });
     } catch (err) {
-      setExpenseError(err.message);
+      setExpenseError(err.response?.data?.error || err.message || 'Failed to record expense.');
+    } finally {
+      setSubmittingExpense(false);
     }
   };
 
@@ -261,10 +272,11 @@ const FuelExpenses = () => {
 
                   <button
                     type="submit"
-                    className="w-full h-11 bg-[#ff8a00] text-black font-bold rounded-lg hover:opacity-90 active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer mt-4"
+                    disabled={submittingFuel}
+                    className="w-full h-11 bg-[#ff8a00] text-black font-bold rounded-lg hover:opacity-90 active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <span className="material-symbols-outlined text-[20px]">save</span>
-                    Add Fuel Record
+                    <span className="material-symbols-outlined text-[20px]">{submittingFuel ? 'sync' : 'save'}</span>
+                    {submittingFuel ? 'Adding Record...' : 'Add Fuel Record'}
                   </button>
                 </form>
               ) : (
@@ -359,10 +371,11 @@ const FuelExpenses = () => {
 
                   <button
                     type="submit"
-                    className="w-full h-11 bg-[#ff8a00] text-black font-bold rounded-lg hover:opacity-90 active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer mt-4"
+                    disabled={submittingExpense}
+                    className="w-full h-11 bg-[#ff8a00] text-black font-bold rounded-lg hover:opacity-90 active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <span className="material-symbols-outlined text-[20px]">save</span>
-                    Add Expense Record
+                    <span className="material-symbols-outlined text-[20px]">{submittingExpense ? 'sync' : 'save'}</span>
+                    {submittingExpense ? 'Recording Expense...' : 'Add Expense Record'}
                   </button>
                 </form>
               )}

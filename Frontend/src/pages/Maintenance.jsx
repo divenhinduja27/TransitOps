@@ -5,6 +5,7 @@ import Header from '../components/Header';
 const Maintenance = () => {
   const { vehicles, maintenance, createMaintenanceRecord, completeMaintenanceRecord } = useERP();
   const [searchQuery, setSearchQuery] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   
   // Form State
   const [formData, setFormData] = useState({
@@ -20,18 +21,20 @@ const Maintenance = () => {
   // Dropdown list (Exclude currently Dispatched vehicles)
   const maintainableVehicles = vehicles.filter(v => v.status !== 'Dispatched');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
+    setSubmitting(true);
 
     if (!formData.vehicleId) {
       setError('Please select a vehicle to service.');
+      setSubmitting(false);
       return;
     }
 
     try {
-      createMaintenanceRecord(formData);
+      await createMaintenanceRecord(formData);
       setSuccess('Maintenance job successfully logged.');
       setFormData({
         vehicleId: '',
@@ -41,14 +44,23 @@ const Maintenance = () => {
         status: 'In Progress'
       });
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.error || err.message || 'Failed to register maintenance ticket.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const handleResolve = (id) => {
+  const handleResolve = async (id) => {
     const todayStr = new Date().toISOString().split('T')[0];
     if (window.confirm('Mark this maintenance ticket as completed? This will restore vehicle to Available status.')) {
-      completeMaintenanceRecord(id, todayStr);
+      try {
+        setError('');
+        setSuccess('');
+        await completeMaintenanceRecord(id, todayStr);
+        setSuccess('Maintenance ticket completed successfully.');
+      } catch (err) {
+        setError(err.response?.data?.error || err.message || 'Failed to complete maintenance ticket.');
+      }
     }
   };
 
@@ -200,10 +212,11 @@ const Maintenance = () => {
 
                 <button
                   type="submit"
-                  className="w-full h-11 bg-[#ff8a00] hover:bg-[#e07b00] text-black font-bold rounded-lg hover:opacity-95 active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer mt-4"
+                  disabled={submitting}
+                  className="w-full h-11 bg-[#ff8a00] hover:bg-[#e07b00] text-black font-bold rounded-lg hover:opacity-95 active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <span className="material-symbols-outlined text-[20px]">save</span>
-                  Save
+                  <span className="material-symbols-outlined text-[20px]">{submitting ? 'sync' : 'save'}</span>
+                  {submitting ? 'Saving...' : 'Save'}
                 </button>
               </form>
 

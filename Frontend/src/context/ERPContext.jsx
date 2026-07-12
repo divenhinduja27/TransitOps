@@ -102,37 +102,33 @@ const mapMaintenanceFromBackend = (m) => ({
   status: m.status === 'ACTIVE' ? 'In Progress' : 'Completed'
 });
 
+const mapFuelLogFromBackend = (f) => ({
+  id: f.id,
+  vehicleId: f.vehicleId,
+  date: f.date || (f.logDate ? f.logDate.split('T')[0] : ''),
+  liters: f.liters || 0,
+  cost: f.cost || 0,
+  odometer: f.odometer || 0
+});
+
+const mapExpenseFromBackend = (e) => ({
+  id: e.id,
+  vehicleId: e.vehicleId,
+  type: e.type || 'Other',
+  amount: e.amount || 0,
+  date: e.date || (e.expenseDate ? e.expenseDate.split('T')[0] : ''),
+  description: e.description || ''
+});
+
 export const ERPProvider = ({ children }) => {
   const [vehicles, setVehicles] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [trips, setTrips] = useState([]);
   const [maintenance, setMaintenance] = useState([]);
+  const [fuelLogs, setFuelLogs] = useState([]);
+  const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
-  // Maintain local state for fuel/expenses since they are not supported by the backend yet
-  const [fuelLogs, setFuelLogs] = useState(() => {
-    const local = localStorage.getItem('erp_fuel_logs');
-    return local ? JSON.parse(local) : [
-      { id: 'FL-401', vehicleId: 1, date: '2026-07-09', liters: 120, cost: 11400, odometer: 24500 },
-      { id: 'FL-402', vehicleId: 2, date: '2026-07-11', liters: 150, cost: 14250, odometer: 12300 }
-    ];
-  });
-
-  const [expenses, setExpenses] = useState(() => {
-    const local = localStorage.getItem('erp_expenses');
-    return local ? JSON.parse(local) : [
-      { id: 'E-501', vehicleId: 1, type: 'Toll Charges', amount: 2400, date: '2026-07-11', description: 'NH-4 Toll Tax for Pune Trip' }
-    ];
-  });
-
-  useEffect(() => {
-    localStorage.setItem('erp_fuel_logs', JSON.stringify(fuelLogs));
-  }, [fuelLogs]);
-
-  useEffect(() => {
-    localStorage.setItem('erp_expenses', JSON.stringify(expenses));
-  }, [expenses]);
 
   // Fetch initial data from backend REST APIs
   const fetchAllData = async () => {
@@ -142,17 +138,21 @@ export const ERPProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      const [vehiclesRes, driversRes, tripsRes, maintRes] = await Promise.all([
+      const [vehiclesRes, driversRes, tripsRes, maintRes, fuelRes, expenseRes] = await Promise.all([
         api.get('/vehicles'),
         api.get('/drivers'),
         api.get('/trips'),
-        api.get('/maintenance')
+        api.get('/maintenance'),
+        api.get('/fuel-logs'),
+        api.get('/expenses')
       ]);
 
       setVehicles(vehiclesRes.data.map(mapVehicleFromBackend));
       setDrivers(driversRes.data.map(mapDriverFromBackend));
       setTrips(tripsRes.data.map(mapTripFromBackend));
       setMaintenance(maintRes.data.map(mapMaintenanceFromBackend));
+      setFuelLogs(fuelRes.data.map(mapFuelLogFromBackend));
+      setExpenses(expenseRes.data.map(mapExpenseFromBackend));
     } catch (err) {
       console.error('Failed to fetch ERP data:', err);
       setError('Failed to connect to backend service.');
@@ -256,11 +256,6 @@ export const ERPProvider = ({ children }) => {
     setDrivers(prev => prev.map(d => d.id === updatedDriver.id ? mapped : d));
   };
 
-  const deleteDriver = async (id) => {
-    await api.delete(`/drivers/${id}`);
-    setDrivers(prev => prev.filter(d => d.id !== id));
-  };
-
   // --- TRIP ACTIONS ---
   const createTrip = async (trip) => {
     const vehicle = vehicles.find(v => v.id === trip.vehicleId);
@@ -355,29 +350,40 @@ export const ERPProvider = ({ children }) => {
     setVehicles(vehiclesRes.data.map(mapVehicleFromBackend));
   };
 
-  // --- LOCAL MUTATIONS FOR FUEL/EXPENSES ---
-  const addFuelLog = (log) => {
-    const newLog = {
-      ...log,
-      id: `FL-${Date.now().toString().slice(-3)}`,
+  // --- BACKEND API ACTIONS FOR FUEL/EXPENSES ---
+  const addFuelLog = async (log) => {
+    const backendData = {
+      vehicleId: Number(log.vehicleId),
       liters: Number(log.liters),
       cost: Number(log.cost),
-      odometer: Number(log.odometer)
+      odometer: Number(log.odometer),
+      date: log.date
     };
-    setFuelLogs(prev => [...prev, newLog]);
-    return newLog;
+    const res = await api.post('/fuel-logs', backendData);
+    const mapped = mapFuelLogFromBackend(res.data);
+    setFuelLogs(prev => [...prev, mapped]);
+
+    // Odometer synchronization will affect vehicle details, refresh vehicles
+    const vehiclesRes = await api.get('/vehicles');
+    setVehicles(vehiclesRes.data.map(mapVehicleFromBackend));
+    return mapped;
   };
 
-  const addExpense = (expense) => {
-    const newExpense = {
-      ...expense,
-      id: `E-${Date.now().toString().slice(-3)}`,
-      amount: Number(expense.amount)
+  const addExpense = async (expense) => {
+    const backendData = {
+      vehicleId: Number(expense.vehicleId),
+      type: expense.type,
+      amount: Number(expense.amount),
+      date: expense.date,
+      description: expense.description
     };
-    setExpenses(prev => [...prev, newExpense]);
-    return newExpense;
+    const res = await api.post('/expenses', backendData);
+    const mapped = mapExpenseFromBackend(res.data);
+    setExpenses(prev => [...prev, mapped]);
+    return mapped;
   };
 
+  // --- STATS CALCULATORS ---
   const getVehicleFuelCost = (vehicleId) => {
     const targetId = String(vehicleId);
     return fuelLogs
@@ -437,7 +443,6 @@ export const ERPProvider = ({ children }) => {
         deleteVehicle,
         addDriver,
         editDriver,
-        deleteDriver,
         createTrip,
         updateTripStatus,
         createMaintenanceRecord,
