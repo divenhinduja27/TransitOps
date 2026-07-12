@@ -75,7 +75,10 @@ const mapDriverFromBackend = (d) => ({
   phone: d.contactNumber || '',
   safetyScore: d.safetyScore || 5.0,
   safetyStatus: mapDriverStatusFromBackend(d.status),
-  tripCompletion: d.tripCompletion || '100%'
+  tripCompletion: d.tripCompletion || '100%',
+  userEmail: d.userEmail || '',
+  userId: d.userId || null,
+  licenseExpiryDate: d.licenseExpiryDate || ''
 });
 
 const mapTripFromBackend = (t) => ({
@@ -227,7 +230,8 @@ export const ERPProvider = ({ children }) => {
       licenseExpiryDate: licenseExpiryStr,
       contactNumber: driver.phone,
       safetyScore: Number(driver.safetyScore) || 5.0,
-      status: mapDriverStatusToBackend(driver.status || 'Available')
+      status: mapDriverStatusToBackend(driver.status || 'Available'),
+      userEmail: driver.userEmail || ''
     };
     const res = await api.post('/drivers', backendData);
     const mapped = mapDriverFromBackend(res.data);
@@ -249,7 +253,8 @@ export const ERPProvider = ({ children }) => {
       licenseExpiryDate: expiryStr,
       contactNumber: updatedDriver.phone,
       safetyScore: Number(updatedDriver.safetyScore) || 5.0,
-      status: mapDriverStatusToBackend(updatedDriver.status)
+      status: mapDriverStatusToBackend(updatedDriver.status),
+      userEmail: updatedDriver.userEmail || ''
     };
     const res = await api.put(`/drivers/${updatedDriver.id}`, backendData);
     const mapped = mapDriverFromBackend(res.data);

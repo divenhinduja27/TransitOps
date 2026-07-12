@@ -20,4 +20,5 @@ public class DriverRequest {
     private Double safetyScore;
     private String status;
     private Long userId;
+    private String userEmail;
 }

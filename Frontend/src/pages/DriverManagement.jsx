@@ -21,7 +21,8 @@ const DriverManagement = () => {
     phone: '',
     tripCompletion: '100%',
     safetyStatus: 'Available',
-    status: 'Available'
+    status: 'Available',
+    userEmail: ''
   });
   const [error, setError] = useState('');
 
@@ -57,7 +58,8 @@ const DriverManagement = () => {
       phone: '',
       tripCompletion: '100%',
       safetyStatus: 'Available',
-      status: 'Available'
+      status: 'Available',
+      userEmail: ''
     });
     setError('');
   };
@@ -497,6 +499,16 @@ const DriverManagement = () => {
                     <option value="Off Duty">Off Duty</option>
                   </select>
                 </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] text-on-surface-variant/80 font-bold uppercase">Associated User Email (optional)</label>
+                  <input
+                    className="form-input"
+                    type="email"
+                    placeholder="driver@example.com"
+                    value={formData.userEmail || ''}
+                    onChange={(e) => setFormData({ ...formData, userEmail: e.target.value })}
+                  />
+                </div>
                 <div className="flex gap-3 justify-end pt-4 border-t border-[var(--border-color)] mt-4">
                   <button
                     type="button"
@@ -622,6 +634,16 @@ const DriverManagement = () => {
                     <option value="On Trip">On Trip</option>
                     <option value="Off Duty">Off Duty</option>
                   </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] text-on-surface-variant/80 font-bold uppercase">Associated User Email (optional)</label>
+                  <input
+                    className="form-input"
+                    type="email"
+                    placeholder="driver@example.com"
+                    value={currentDriver.userEmail || ''}
+                    onChange={(e) => setCurrentDriver({ ...currentDriver, userEmail: e.target.value })}
+                  />
                 </div>
                 <div className="flex gap-3 justify-end pt-4 border-t border-[var(--border-color)] mt-4">
                   <button

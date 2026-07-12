@@ -57,6 +57,9 @@ public class DriverService {
         if (request.getUserId() != null) {
             user = userRepository.findById(request.getUserId())
                     .orElseThrow(() -> new RuntimeException("User not found with id: " + request.getUserId()));
+        } else if (request.getUserEmail() != null && !request.getUserEmail().trim().isEmpty()) {
+            user = userRepository.findByEmail(request.getUserEmail().trim())
+                    .orElseThrow(() -> new RuntimeException("User not found with email: " + request.getUserEmail()));
         }
 
         Driver driver = Driver.builder()
@@ -90,6 +93,9 @@ public class DriverService {
         if (request.getUserId() != null) {
             user = userRepository.findById(request.getUserId())
                     .orElseThrow(() -> new RuntimeException("User not found with id: " + request.getUserId()));
+        } else if (request.getUserEmail() != null && !request.getUserEmail().trim().isEmpty()) {
+            user = userRepository.findByEmail(request.getUserEmail().trim())
+                    .orElseThrow(() -> new RuntimeException("User not found with email: " + request.getUserEmail()));
         }
 
         driver.setName(request.getName());
