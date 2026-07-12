@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import api from '../services/api';
 
 const ERPContext = createContext(null);
 
+<<<<<<< HEAD
 const INITIAL_VEHICLES = [
   { id: 'V-101', registrationNumber: 'VAN-05', make: 'Chevrolet', model: 'Express Cargo', type: 'Container', capacity: 4500, status: 'In Shop', lastServiceDate: '2026-07-07' },
   { id: 'V-102', registrationNumber: 'TRUCK-11', make: 'BharatBenz', model: 'Gigashield 4023T', type: 'Heavy Truck', capacity: 18000, status: 'Available', lastServiceDate: '2026-06-15' },
@@ -33,83 +35,121 @@ const INITIAL_MAINTENANCE = [
   { id: 'M-302', vehicleId: 'V-102', serviceType: 'Engine Repair', cost: 18000, startDate: '2026-06-12', endDate: '2026-06-15', status: 'Completed' },
   { id: 'M-303', vehicleId: 'V-103', serviceType: 'Tyre Replace', cost: 6200, startDate: '2026-07-10', endDate: '', status: 'In Progress' }
 ];
+=======
+// Status Translation Helpers
+const mapVehicleStatusFromBackend = (s) => {
+  if (s === 'AVAILABLE') return 'Available';
+  if (s === 'ON_TRIP') return 'Dispatched';
+  if (s === 'IN_SHOP') return 'In Shop';
+  if (s === 'RETIRED') return 'Retired';
+  return 'Available';
+};
 
-const INITIAL_FUEL_LOGS = [
-  { id: 'FL-401', vehicleId: 'V-101', date: '2026-07-09', liters: 120, cost: 11400, odometer: 24500 },
-  { id: 'FL-402', vehicleId: 'V-103', date: '2026-07-11', liters: 150, cost: 14250, odometer: 12300 },
-  { id: 'FL-403', vehicleId: 'V-107', date: '2026-07-12', liters: 80, cost: 7600, odometer: 34100 },
-  { id: 'FL-404', vehicleId: 'V-102', date: '2026-07-06', liters: 90, cost: 8550, odometer: 18900 }
-];
+const mapVehicleStatusToBackend = (s) => {
+  if (s === 'Available') return 'AVAILABLE';
+  if (s === 'Dispatched') return 'ON_TRIP';
+  if (s === 'In Shop') return 'IN_SHOP';
+  if (s === 'Retired') return 'RETIRED';
+  return 'AVAILABLE';
+};
 
-const INITIAL_EXPENSES = [
-  { id: 'E-501', vehicleId: 'V-103', type: 'Toll Charges', amount: 2400, date: '2026-07-11', description: 'NH-4 Toll Tax for Pune Trip' },
-  { id: 'E-502', vehicleId: 'V-107', type: 'Driver Allowance', amount: 1500, date: '2026-07-12', description: 'Meal & Night Halt Allowance' },
-  { id: 'E-503', vehicleId: 'V-101', type: 'State Permit Fee', amount: 4500, date: '2026-07-08', description: 'UP State Entry Permit' }
-];
+const mapDriverStatusFromBackend = (s) => {
+  if (s === 'AVAILABLE') return 'Available';
+  if (s === 'ON_TRIP') return 'Active';
+  if (s === 'OFF_DUTY') return 'Off Duty';
+  if (s === 'SUSPENDED') return 'Suspended';
+  return 'Available';
+};
+
+const mapDriverStatusToBackend = (s) => {
+  if (s === 'Available') return 'AVAILABLE';
+  if (s === 'Active') return 'ON_TRIP';
+  if (s === 'Off Duty') return 'OFF_DUTY';
+  if (s === 'Suspended') return 'SUSPENDED';
+  return 'AVAILABLE';
+};
+>>>>>>> 3072d1da07f9d9356275c5824af5480929cf9d7a
+
+const mapTripStatusFromBackend = (s) => {
+  if (s === 'DRAFT') return 'Pending';
+  if (s === 'DISPATCHED') return 'Dispatched';
+  if (s === 'COMPLETED') return 'Completed';
+  if (s === 'CANCELLED') return 'Cancelled';
+  return 'Pending';
+};
+
+// Object Translators
+const mapVehicleFromBackend = (v) => ({
+  id: v.id,
+  registrationNumber: v.registrationNumber,
+  make: v.model ? v.model.split(' ')[0] : 'Tata',
+  model: v.model || '',
+  type: v.type || 'Container',
+  capacity: v.maxLoadCapacity || 10000,
+  odometer: v.odometer || 0,
+  acquisitionCost: v.acquisitionCost || 0,
+  status: mapVehicleStatusFromBackend(v.status),
+  region: v.region || 'West',
+  lastServiceDate: ''
+});
+
+const mapDriverFromBackend = (d) => ({
+  id: d.id,
+  name: d.name || '',
+  licenseNumber: d.licenseNumber || '',
+  licenseExpiry: d.licenseExpiryDate || '',
+  status: mapDriverStatusFromBackend(d.status),
+  phone: d.contactNumber || '',
+  safetyScore: d.safetyScore || 5.0
+});
+
+const mapTripFromBackend = (t) => ({
+  id: t.id,
+  tripId: `TRP-${1000 + t.id}`,
+  vehicleId: t.vehicleId,
+  driverId: t.driverId,
+  origin: t.source || '',
+  destination: t.destination || '',
+  cargoWeight: t.cargoWeight || 0,
+  status: mapTripStatusFromBackend(t.status),
+  startDate: t.dispatchedAt ? t.dispatchedAt.split('T')[0] : '',
+  endDate: t.completedAt ? t.completedAt.split('T')[0] : '',
+  cost: t.plannedDistance ? Math.round(t.plannedDistance * 50) : 0
+});
+
+const mapMaintenanceFromBackend = (m) => ({
+  id: m.id,
+  vehicleId: m.vehicleId,
+  serviceType: m.description || '',
+  cost: m.cost || 0,
+  startDate: m.logDate ? m.logDate.split('T')[0] : '',
+  endDate: m.closedAt ? m.closedAt.split('T')[0] : '',
+  status: m.status === 'ACTIVE' ? 'In Progress' : 'Completed'
+});
 
 export const ERPProvider = ({ children }) => {
-  const [vehicles, setVehicles] = useState(() => {
-    const local = localStorage.getItem('erp_vehicles');
-    let loaded = local ? JSON.parse(local) : INITIAL_VEHICLES;
-    const hasRetired = loaded.some(v => v.status === 'Retired');
-    if (!hasRetired) {
-      loaded = [
-        ...loaded,
-        { id: 'V-109', registrationNumber: 'MH-12-RS-9981', make: 'Ashok Leyland', model: 'Taurus 2518', type: 'Dumper', capacity: 15000, status: 'Retired', lastServiceDate: '2025-10-12' },
-        { id: 'V-110', registrationNumber: 'DL-3C-BB-0092', make: 'Tata', model: 'LPT 1613', type: 'Cargo Van', capacity: 9000, status: 'Retired', lastServiceDate: '2024-04-18' }
-      ];
-    }
-    return loaded;
-  });
+  const [vehicles, setVehicles] = useState([]);
+  const [drivers, setDrivers] = useState([]);
+  const [trips, setTrips] = useState([]);
+  const [maintenance, setMaintenance] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const [drivers, setDrivers] = useState(() => {
-    const local = localStorage.getItem('erp_drivers');
-    return local ? JSON.parse(local) : INITIAL_DRIVERS;
-  });
-
-  const [trips, setTrips] = useState(() => {
-    const local = localStorage.getItem('erp_trips');
-    let loaded = local ? JSON.parse(local) : INITIAL_TRIPS;
-    const hasPending = loaded.some(t => t.status === 'Pending');
-    if (!hasPending) {
-      loaded = [
-        ...loaded,
-        { id: 'T-1006', tripId: 'TRP-1006', vehicleId: 'V-104', driverId: 'D-204', origin: 'Bangalore Depot', destination: 'Chennai Dockyard', cargoWeight: 12000, status: 'Pending', startDate: '2026-07-12', endDate: '', cost: 11000 }
-      ];
-    }
-    return loaded;
-  });
-
-  const [maintenance, setMaintenance] = useState(() => {
-    const local = localStorage.getItem('erp_maintenance');
-    return local ? JSON.parse(local) : INITIAL_MAINTENANCE;
-  });
-
+  // Maintain local state for fuel/expenses since they are not supported by the backend yet
   const [fuelLogs, setFuelLogs] = useState(() => {
     const local = localStorage.getItem('erp_fuel_logs');
-    return local ? JSON.parse(local) : INITIAL_FUEL_LOGS;
+    return local ? JSON.parse(local) : [
+      { id: 'FL-401', vehicleId: 1, date: '2026-07-09', liters: 120, cost: 11400, odometer: 24500 },
+      { id: 'FL-402', vehicleId: 2, date: '2026-07-11', liters: 150, cost: 14250, odometer: 12300 }
+    ];
   });
 
   const [expenses, setExpenses] = useState(() => {
     const local = localStorage.getItem('erp_expenses');
-    return local ? JSON.parse(local) : INITIAL_EXPENSES;
+    return local ? JSON.parse(local) : [
+      { id: 'E-501', vehicleId: 1, type: 'Toll Charges', amount: 2400, date: '2026-07-11', description: 'NH-4 Toll Tax for Pune Trip' }
+    ];
   });
-
-  useEffect(() => {
-    localStorage.setItem('erp_vehicles', JSON.stringify(vehicles));
-  }, [vehicles]);
-
-  useEffect(() => {
-    localStorage.setItem('erp_drivers', JSON.stringify(drivers));
-  }, [drivers]);
-
-  useEffect(() => {
-    localStorage.setItem('erp_trips', JSON.stringify(trips));
-  }, [trips]);
-
-  useEffect(() => {
-    localStorage.setItem('erp_maintenance', JSON.stringify(maintenance));
-  }, [maintenance]);
 
   useEffect(() => {
     localStorage.setItem('erp_fuel_logs', JSON.stringify(fuelLogs));
@@ -119,46 +159,86 @@ export const ERPProvider = ({ children }) => {
     localStorage.setItem('erp_expenses', JSON.stringify(expenses));
   }, [expenses]);
 
-  // --- VEHICLE ACTIONS ---
-  const addVehicle = (vehicle) => {
-    const exists = vehicles.some(
-      v => v.registrationNumber.toLowerCase().replace(/\s+/g, '') === 
-           vehicle.registrationNumber.toLowerCase().replace(/\s+/g, '')
-    );
-    if (exists) {
-      throw new Error(`Vehicle registration number ${vehicle.registrationNumber} already exists.`);
+  // Fetch initial data from backend REST APIs
+  const fetchAllData = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    setLoading(true);
+    setError(null);
+    try {
+      const [vehiclesRes, driversRes, tripsRes, maintRes] = await Promise.all([
+        api.get('/vehicles'),
+        api.get('/drivers'),
+        api.get('/trips'),
+        api.get('/maintenance')
+      ]);
+
+      setVehicles(vehiclesRes.data.map(mapVehicleFromBackend));
+      setDrivers(driversRes.data.map(mapDriverFromBackend));
+      setTrips(tripsRes.data.map(mapTripFromBackend));
+      setMaintenance(maintRes.data.map(mapMaintenanceFromBackend));
+    } catch (err) {
+      console.error('Failed to fetch ERP data:', err);
+      setError('Failed to connect to backend service.');
+    } finally {
+      setLoading(false);
     }
-    const newVehicle = {
-      ...vehicle,
-      id: `V-${Date.now().toString().slice(-3)}`,
-      capacity: Number(vehicle.capacity),
-      status: 'Available'
+  };
+
+  useEffect(() => {
+    fetchAllData();
+  }, []);
+
+  // Listen to login/logout token changes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      fetchAllData();
     };
-    setVehicles(prev => [...prev, newVehicle]);
-    return newVehicle;
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // --- VEHICLE ACTIONS ---
+  const addVehicle = async (vehicle) => {
+    const backendData = {
+      registrationNumber: vehicle.registrationNumber,
+      model: `${vehicle.make} ${vehicle.model}`,
+      type: vehicle.type,
+      maxLoadCapacity: Number(vehicle.capacity),
+      odometer: Number(vehicle.odometer) || 0,
+      acquisitionCost: Number(vehicle.acquisitionCost) || 0,
+      region: vehicle.region
+    };
+    const res = await api.post('/vehicles', backendData);
+    const mapped = mapVehicleFromBackend(res.data);
+    setVehicles(prev => [...prev, mapped]);
+    return mapped;
   };
 
-  const editVehicle = (updatedVehicle) => {
-    const exists = vehicles.some(
-      v => v.id !== updatedVehicle.id &&
-           v.registrationNumber.toLowerCase().replace(/\s+/g, '') === 
-           updatedVehicle.registrationNumber.toLowerCase().replace(/\s+/g, '')
-    );
-    if (exists) {
-      throw new Error(`Vehicle registration number ${updatedVehicle.registrationNumber} already exists.`);
-    }
-    setVehicles(prev => prev.map(v => v.id === updatedVehicle.id ? { ...v, ...updatedVehicle, capacity: Number(updatedVehicle.capacity) } : v));
+  const editVehicle = async (updatedVehicle) => {
+    const backendData = {
+      registrationNumber: updatedVehicle.registrationNumber,
+      model: updatedVehicle.model,
+      type: updatedVehicle.type,
+      maxLoadCapacity: Number(updatedVehicle.capacity),
+      odometer: Number(updatedVehicle.odometer) || 0,
+      acquisitionCost: Number(updatedVehicle.acquisitionCost) || 0,
+      region: updatedVehicle.region,
+      status: mapVehicleStatusToBackend(updatedVehicle.status)
+    };
+    const res = await api.put(`/vehicles/${updatedVehicle.id}`, backendData);
+    const mapped = mapVehicleFromBackend(res.data);
+    setVehicles(prev => prev.map(v => v.id === updatedVehicle.id ? mapped : v));
   };
 
-  const deleteVehicle = (id) => {
-    const activeTrip = trips.some(t => t.vehicleId === id && t.status === 'Dispatched');
-    if (activeTrip) {
-      throw new Error(`Cannot delete vehicle. It is currently dispatched on an active trip.`);
-    }
+  const deleteVehicle = async (id) => {
+    await api.delete(`/vehicles/${id}`);
     setVehicles(prev => prev.filter(v => v.id !== id));
   };
 
   // --- DRIVER ACTIONS ---
+<<<<<<< HEAD
   const addDriver = (driver) => {
     let licenseExpiryStr = driver.licenseExpiry;
     if (licenseExpiryStr.length === 7) { // format YYYY-MM
@@ -183,11 +263,24 @@ export const ERPProvider = ({ children }) => {
       tripCompletion: driver.tripCompletion || '100%',
       safetyStatus,
       status
+=======
+  const addDriver = async (driver) => {
+    const backendData = {
+      name: driver.name,
+      licenseNumber: driver.licenseNumber,
+      licenseCategory: driver.licenseCategory || 'Class A',
+      licenseExpiryDate: driver.licenseExpiry,
+      contactNumber: driver.phone,
+      safetyScore: Number(driver.safetyScore) || 5.0
+>>>>>>> 3072d1da07f9d9356275c5824af5480929cf9d7a
     };
-    setDrivers(prev => [...prev, newDriver]);
-    return newDriver;
+    const res = await api.post('/drivers', backendData);
+    const mapped = mapDriverFromBackend(res.data);
+    setDrivers(prev => [...prev, mapped]);
+    return mapped;
   };
 
+<<<<<<< HEAD
   const editDriver = (updatedDriver) => {
     let expiryStr = updatedDriver.licenseExpiry;
     if (expiryStr.length === 7) {
@@ -211,17 +304,30 @@ export const ERPProvider = ({ children }) => {
       safetyStatus, 
       status 
     } : d));
+=======
+  const editDriver = async (updatedDriver) => {
+    const backendData = {
+      name: updatedDriver.name,
+      licenseNumber: updatedDriver.licenseNumber,
+      licenseCategory: updatedDriver.licenseCategory || 'Class A',
+      licenseExpiryDate: updatedDriver.licenseExpiry,
+      contactNumber: updatedDriver.phone,
+      safetyScore: Number(updatedDriver.safetyScore) || 5.0,
+      status: mapDriverStatusToBackend(updatedDriver.status)
+    };
+    const res = await api.put(`/drivers/${updatedDriver.id}`, backendData);
+    const mapped = mapDriverFromBackend(res.data);
+    setDrivers(prev => prev.map(d => d.id === updatedDriver.id ? mapped : d));
+>>>>>>> 3072d1da07f9d9356275c5824af5480929cf9d7a
   };
 
-  const deleteDriver = (id) => {
-    const activeTrip = trips.some(t => t.driverId === id && t.status === 'Dispatched');
-    if (activeTrip) {
-      throw new Error(`Cannot delete driver. They are currently active on a dispatched trip.`);
-    }
+  const deleteDriver = async (id) => {
+    await api.delete(`/drivers/${id}`);
     setDrivers(prev => prev.filter(d => d.id !== id));
   };
 
   // --- TRIP ACTIONS ---
+<<<<<<< HEAD
   const createTrip = (trip) => {
     const vehicle = vehicles.find(v => v.id === trip.vehicleId);
     if (!vehicle) throw new Error('Vehicle not found.');
@@ -259,19 +365,37 @@ export const ERPProvider = ({ children }) => {
       startDate: new Date().toISOString().split('T')[0],
       endDate: '',
       plannedDistance: Number(trip.plannedDistance) || 0
+=======
+  const createTrip = async (trip) => {
+    const backendData = {
+      source: trip.origin,
+      destination: trip.destination,
+      vehicleId: Number(trip.vehicleId),
+      driverId: Number(trip.driverId),
+      cargoWeight: Number(trip.cargoWeight),
+      plannedDistance: Number(trip.cost) / 50 || 120
+>>>>>>> 3072d1da07f9d9356275c5824af5480929cf9d7a
     };
+    const res = await api.post('/trips', backendData);
+    const mapped = mapTripFromBackend(res.data);
+    setTrips(prev => [...prev, mapped]);
 
+<<<<<<< HEAD
     setTrips(prev => [...prev, newTrip]);
 
     if (newTrip.status === 'Dispatched') {
       // Automatically lock vehicle and driver
       setVehicles(prev => prev.map(v => v.id === trip.vehicleId ? { ...v, status: 'Dispatched' } : v));
       setDrivers(prev => prev.map(d => d.id === trip.driverId ? { ...d, safetyStatus: 'On Trip', status: 'On Trip' } : d));
+=======
+    if (trip.status === 'Dispatched') {
+      await updateTripStatus(mapped.id, 'Dispatched');
+>>>>>>> 3072d1da07f9d9356275c5824af5480929cf9d7a
     }
-
-    return newTrip;
+    return mapped;
   };
 
+<<<<<<< HEAD
   const updateTripStatus = (tripId, status) => {
     setTrips(prev => prev.map(t => {
       if (t.id !== tripId) return t;
@@ -301,11 +425,30 @@ export const ERPProvider = ({ children }) => {
         status,
         startDate,
         endDate
+=======
+  const updateTripStatus = async (tripId, status, details = {}) => {
+    let res;
+    if (status === 'Dispatched') {
+      res = await api.put(`/trips/${tripId}/dispatch`);
+    } else if (status === 'Completed') {
+      const backendData = {
+        finalOdometer: Number(details.finalOdometer) || 0,
+        fuelConsumed: Number(details.fuelConsumed) || 0,
+        fuelCost: details.fuelCost ? Number(details.fuelCost) : null
+>>>>>>> 3072d1da07f9d9356275c5824af5480929cf9d7a
       };
-    }));
+      res = await api.put(`/trips/${tripId}/complete`, backendData);
+    } else if (status === 'Cancelled') {
+      res = await api.put(`/trips/${tripId}/cancel`);
+    }
+
+    if (res) {
+      await fetchAllData();
+    }
   };
 
   // --- MAINTENANCE ACTIONS ---
+<<<<<<< HEAD
   const createMaintenanceRecord = (record) => {
     const vehicle = vehicles.find(v => v.id === record.vehicleId);
     if (!vehicle) throw new Error('Vehicle not found.');
@@ -324,33 +467,44 @@ export const ERPProvider = ({ children }) => {
       startDate: record.startDate || new Date().toISOString().split('T')[0],
       endDate: finishDate,
       status: recStatus
+=======
+  const createMaintenanceRecord = async (record) => {
+    const backendData = {
+      vehicleId: Number(record.vehicleId),
+      description: record.serviceType,
+      cost: Number(record.cost)
+>>>>>>> 3072d1da07f9d9356275c5824af5480929cf9d7a
     };
+    const res = await api.post('/maintenance', backendData);
+    const mapped = mapMaintenanceFromBackend(res.data);
+    setMaintenance(prev => [...prev, mapped]);
 
+<<<<<<< HEAD
     setMaintenance(prev => [...prev, newRecord]);
 
     // Automatically transition vehicle status: In Shop if In Progress, Available if Completed
     const vehicleStatus = recStatus === 'Completed' ? 'Available' : 'In Shop';
     setVehicles(prev => prev.map(v => v.id === record.vehicleId ? { ...v, status: vehicleStatus, lastServiceDate: recStatus === 'Completed' ? (record.startDate || new Date().toISOString().split('T')[0]) : v.lastServiceDate } : v));
     return newRecord;
+=======
+    // Re-fetch vehicles to synchronize status update to 'In Shop'
+    const vehiclesRes = await api.get('/vehicles');
+    setVehicles(vehiclesRes.data.map(mapVehicleFromBackend));
+    return mapped;
+>>>>>>> 3072d1da07f9d9356275c5824af5480929cf9d7a
   };
 
-  const completeMaintenanceRecord = (id, endDate) => {
-    setMaintenance(prev => prev.map(m => {
-      if (m.id !== id) return m;
+  const completeMaintenanceRecord = async (id, endDate) => {
+    const res = await api.put(`/maintenance/${id}/complete`);
+    const mapped = mapMaintenanceFromBackend(res.data);
+    setMaintenance(prev => prev.map(m => m.id === id ? mapped : m));
 
-      const finishDate = endDate || new Date().toISOString().split('T')[0];
-      // Restore vehicle to Available
-      setVehicles(vPrev => vPrev.map(v => v.id === m.vehicleId ? { ...v, status: 'Available', lastServiceDate: finishDate } : v));
-
-      return {
-        ...m,
-        status: 'Completed',
-        endDate: finishDate
-      };
-    }));
+    // Re-fetch vehicles to synchronize status update to 'Available'
+    const vehiclesRes = await api.get('/vehicles');
+    setVehicles(vehiclesRes.data.map(mapVehicleFromBackend));
   };
 
-  // --- FUEL & EXPENSE ACTIONS ---
+  // --- LOCAL MUTATIONS FOR FUEL/EXPENSES ---
   const addFuelLog = (log) => {
     const newLog = {
       ...log,
@@ -373,17 +527,17 @@ export const ERPProvider = ({ children }) => {
     return newExpense;
   };
 
-  // --- UTILS & CALCULATORS ---
   const getVehicleOperationalCost = (vehicleId) => {
-    const fuelCost = fuelLogs.filter(f => f.vehicleId === vehicleId).reduce((sum, f) => sum + f.cost, 0);
-    const serviceCost = maintenance.filter(m => m.vehicleId === vehicleId).reduce((sum, m) => sum + m.cost, 0);
-    const miscCost = expenses.filter(e => e.vehicleId === vehicleId).reduce((sum, e) => sum + e.amount, 0);
+    const numId = Number(vehicleId);
+    const fuelCost = fuelLogs.filter(f => Number(f.vehicleId) === numId).reduce((sum, f) => sum + f.cost, 0);
+    const serviceCost = maintenance.filter(m => Number(m.vehicleId) === numId).reduce((sum, m) => sum + m.cost, 0);
+    const miscCost = expenses.filter(e => Number(e.vehicleId) === numId).reduce((sum, e) => sum + e.amount, 0);
     return fuelCost + serviceCost + miscCost;
   };
 
   const getVehicleRevenue = (vehicleId) => {
-    // We assume completed trips earn revenue equal to their cost + a mock profit margin (e.g. 1.5 * trip cost)
-    return trips.filter(t => t.vehicleId === vehicleId && t.status === 'Completed').reduce((sum, t) => sum + (t.cost * 1.4), 0);
+    const numId = Number(vehicleId);
+    return trips.filter(t => Number(t.vehicleId) === numId && t.status === 'Completed').reduce((sum, t) => sum + (t.cost * 1.4), 0);
   };
 
   return (
@@ -395,6 +549,9 @@ export const ERPProvider = ({ children }) => {
         maintenance,
         fuelLogs,
         expenses,
+        loading,
+        error,
+        refreshData: fetchAllData,
         addVehicle,
         editVehicle,
         deleteVehicle,
