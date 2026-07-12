@@ -287,3 +287,70 @@ html.light span.material-symbols-outlined {
   font-variation-settings: "'FILL' 0, 'wght' 600"; /* Bold icons */
 }
 
+/* ===================================
+   Print Media Styles - TransitOps ERP
+   =================================== */
+@media print {
+  /* Hide navigation sidebar, headers, filters, buttons, and action panels */
+  aside,
+  header,
+  .filter-panel,
+  .export-buttons,
+  button,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Reset main content width and spacing */
+  main {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  /* Force white background and black text on all components */
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+  }
+
+  .glass-card,
+  .card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: none !important;
+    border-radius: 8px !important;
+    padding: 12px !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Re-arrange layout grids for 2-column or stacked printing */
+  .grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+  }
+  
+  .col-span-2 {
+    grid-column: span 2 / span 2 !important;
+  }
+
+  svg {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  h1, h2, h3, h4 {
+    page-break-after: avoid !important;
+  }
+  
+  tr, img, svg {
+    page-break-inside: avoid !important;
+  }
+}
+
