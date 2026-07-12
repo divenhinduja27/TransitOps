@@ -53,7 +53,16 @@ const INITIAL_EXPENSES = [
 export const ERPProvider = ({ children }) => {
   const [vehicles, setVehicles] = useState(() => {
     const local = localStorage.getItem('erp_vehicles');
-    return local ? JSON.parse(local) : INITIAL_VEHICLES;
+    let loaded = local ? JSON.parse(local) : INITIAL_VEHICLES;
+    const hasRetired = loaded.some(v => v.status === 'Retired');
+    if (!hasRetired) {
+      loaded = [
+        ...loaded,
+        { id: 'V-109', registrationNumber: 'MH-12-RS-9981', make: 'Ashok Leyland', model: 'Taurus 2518', type: 'Dumper', capacity: 15000, status: 'Retired', lastServiceDate: '2025-10-12' },
+        { id: 'V-110', registrationNumber: 'DL-3C-BB-0092', make: 'Tata', model: 'LPT 1613', type: 'Cargo Van', capacity: 9000, status: 'Retired', lastServiceDate: '2024-04-18' }
+      ];
+    }
+    return loaded;
   });
 
   const [drivers, setDrivers] = useState(() => {
@@ -63,7 +72,15 @@ export const ERPProvider = ({ children }) => {
 
   const [trips, setTrips] = useState(() => {
     const local = localStorage.getItem('erp_trips');
-    return local ? JSON.parse(local) : INITIAL_TRIPS;
+    let loaded = local ? JSON.parse(local) : INITIAL_TRIPS;
+    const hasPending = loaded.some(t => t.status === 'Pending');
+    if (!hasPending) {
+      loaded = [
+        ...loaded,
+        { id: 'T-1006', tripId: 'TRP-1006', vehicleId: 'V-104', driverId: 'D-204', origin: 'Bangalore Depot', destination: 'Chennai Dockyard', cargoWeight: 12000, status: 'Pending', startDate: '2026-07-12', endDate: '', cost: 11000 }
+      ];
+    }
+    return loaded;
   });
 
   const [maintenance, setMaintenance] = useState(() => {
