@@ -16,7 +16,11 @@ const Reports = () => {
     getVehicleTollCost,
     getVehicleMiscCost,
     getVehicleOperationalCost,
-    getVehicleRevenue
+    getVehicleRevenue,
+    currency,
+    distanceUnit,
+    formatCost,
+    formatDistance
   } = useERP();
 
   const { theme } = useTheme();
@@ -633,8 +637,12 @@ const Reports = () => {
             <div className="glass-card p-6 rounded-xl flex flex-col justify-between">
               <span className="text-[var(--color-text-muted)] text-xs font-bold uppercase tracking-wider">Avg Fuel Efficiency</span>
               <div className="mt-4 flex items-baseline gap-2">
-                <span className="text-3xl font-extrabold text-[var(--color-text-primary)] metric-glow">{avgFuelEfficiency}</span>
-                <span className="text-xs text-[var(--color-text-muted)]">km/L</span>
+                <span className="text-3xl font-extrabold text-[var(--color-text-primary)] metric-glow">
+                  {distanceUnit === 'Miles' ? (avgFuelEfficiency * 0.621371).toFixed(1) : distanceUnit === 'Nautical Miles' ? (avgFuelEfficiency * 0.539957).toFixed(1) : avgFuelEfficiency}
+                </span>
+                <span className="text-xs text-[var(--color-text-muted)]">
+                  {distanceUnit === 'Miles' ? 'mi/L' : distanceUnit === 'Nautical Miles' ? 'nm/L' : 'km/L'}
+                </span>
               </div>
             </div>
 
@@ -651,7 +659,7 @@ const Reports = () => {
             <div className="glass-card p-6 rounded-xl flex flex-col justify-between">
               <span className="text-[var(--color-text-muted)] text-xs font-bold uppercase tracking-wider">Total Operational Cost</span>
               <div className="mt-4 flex items-baseline gap-2">
-                <span className="text-3xl font-extrabold text-[var(--color-text-primary)] metric-glow">₹{totalOpex.toLocaleString()}</span>
+                <span className="text-3xl font-extrabold text-[var(--color-text-primary)] metric-glow">{formatCost(totalOpex)}</span>
               </div>
             </div>
 

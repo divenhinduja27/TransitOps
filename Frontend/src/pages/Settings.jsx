@@ -1,27 +1,34 @@
 import React, { useState } from 'react';
 import Header from '../components/Header';
+import { useERP } from '../context/ERPContext';
+import useAuth from '../hooks/useAuth';
 
 const Settings = () => {
-  // Load configuration settings from localStorage or fallback to blueprint defaults
+  const { user } = useAuth();
+  const { 
+    currency, 
+    updateCurrency, 
+    distanceUnit, 
+    updateDistanceUnit 
+  } = useERP();
+
+  // Load configuration settings from localStorage or fallback to defaults
   const [depotName, setDepotName] = useState(() => {
     return localStorage.getItem('erp_depot_name') || 'Gandhinagar Depot GJ4';
   });
 
-  const [currency, setCurrency] = useState(() => {
-    return localStorage.getItem('erp_currency') || 'INR (Rs)';
-  });
-
-  const [distanceUnit, setDistanceUnit] = useState(() => {
-    return localStorage.getItem('erp_distance_unit') || 'Kilometers';
-  });
-
+  const [localCurrency, setLocalCurrency] = useState(currency);
+  const [localDistanceUnit, setLocalDistanceUnit] = useState(distanceUnit);
   const [successMsg, setSuccessMsg] = useState('');
+
+  const userDisplayName = user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : (user?.email?.split('@')[0] || 'Operator');
+  const userRoleLabel = user?.role === 'ROLE_FLEET_MANAGER' ? 'Fleet Manager' : user?.role === 'ROLE_DRIVER' ? 'Dispatcher' : 'Operator';
 
   const handleSave = (e) => {
     e.preventDefault();
     localStorage.setItem('erp_depot_name', depotName);
-    localStorage.setItem('erp_currency', currency);
-    localStorage.setItem('erp_distance_unit', distanceUnit);
+    updateCurrency(localCurrency);
+    updateDistanceUnit(localDistanceUnit);
     setSuccessMsg('System operational profiles successfully saved.');
     setTimeout(() => setSuccessMsg(''), 3000);
   };
@@ -52,14 +59,14 @@ const Settings = () => {
     <>
       <style>{`
         .glass-card {
-          background: rgba(30, 30, 30, 0.45);
+          background: var(--bg-card);
           backdrop-filter: blur(12px);
-          border: 1px solid #2E2E2E;
+          border: 1px solid var(--border-color);
         }
         .form-select {
-          background-color: #161616;
-          border: 1px solid #2E2E2E;
-          color: #e6e1e2;
+          background-color: var(--bg-app);
+          border: 1px solid var(--border-color);
+          color: var(--color-text-primary);
           width: 100%;
           height: 46px;
           padding: 0 16px;
@@ -69,10 +76,10 @@ const Settings = () => {
           font-size: 0.8125rem;
           cursor: pointer;
           appearance: none;
-          background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
           background-repeat: no-repeat;
           background-position: right 16px center;
           background-size: 16px;
+          background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
         }
         .form-select:focus {
           border-color: #ff8a00;
@@ -83,14 +90,14 @@ const Settings = () => {
         }
       `}</style>
 
-      <main className="ml-[260px] min-h-screen flex flex-col bg-[#111111] text-[#e6e1e2]">
+      <main className="ml-[260px] min-h-screen flex flex-col bg-[var(--bg-app)] text-[var(--color-text-secondary)]">
         <Header 
           title="Settings & Config" 
           actions={
             <div className="flex items-center gap-3 mr-4">
-              <span className="text-sm font-semibold text-white">Raven K.</span>
+              <span className="text-sm font-semibold text-[var(--color-text-primary)]">{userDisplayName}</span>
               <span className="bg-sky-500/10 text-sky-400 border border-sky-500/30 text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full">
-                Dispatcher
+                {userRoleLabel}
               </span>
             </div>
           }
@@ -106,18 +113,18 @@ const Settings = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
             {/* General Settings Column */}
-            <div className="glass-card p-8 rounded-2xl border border-[#2E2E2E] flex flex-col justify-between">
+            <div className="glass-card p-8 rounded-2xl border border-[var(--border-color)] flex flex-col justify-between">
               <div className="space-y-6">
                 <div>
                   <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#ff8a00] mb-1">
                     General
                   </h3>
-                  <p className="text-[10px] text-zinc-400">Configure global parameters and depot metrics.</p>
+                  <p className="text-[10px] text-[var(--color-text-muted)]">Configure global parameters and depot metrics.</p>
                 </div>
 
                 <form onSubmit={handleSave} className="space-y-5">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Depot Name</label>
+                    <label className="text-[10px] text-[var(--color-text-muted)] font-bold uppercase tracking-wider">Depot Name</label>
                     <select
                       className="form-select"
                       value={depotName}
@@ -130,11 +137,11 @@ const Settings = () => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Currency</label>
+                    <label className="text-[10px] text-[var(--color-text-muted)] font-bold uppercase tracking-wider">Currency</label>
                     <select
                       className="form-select"
-                      value={currency}
-                      onChange={(e) => setCurrency(e.target.value)}
+                      value={localCurrency}
+                      onChange={(e) => setLocalCurrency(e.target.value)}
                     >
                       {currencyOptions.map((opt) => (
                         <option key={opt} value={opt}>{opt}</option>
@@ -143,11 +150,11 @@ const Settings = () => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Distance Unit</label>
+                    <label className="text-[10px] text-[var(--color-text-muted)] font-bold uppercase tracking-wider">Distance Unit</label>
                     <select
                       className="form-select"
-                      value={distanceUnit}
-                      onChange={(e) => setDistanceUnit(e.target.value)}
+                      value={localDistanceUnit}
+                      onChange={(e) => setLocalDistanceUnit(e.target.value)}
                     >
                       {distanceOptions.map((opt) => (
                         <option key={opt} value={opt}>{opt}</option>
@@ -158,7 +165,7 @@ const Settings = () => {
                   <div className="pt-3">
                     <button
                       type="submit"
-                      className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-8 py-2.5  rounded-full font-bold hover:shadow-lg hover:shadow-blue-500/10 active:scale-95 transition-all text-xs cursor-pointer duration-200"
+                      className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white px-8 py-2.5 rounded-full font-bold hover:shadow-lg hover:shadow-blue-500/10 active:scale-95 transition-all text-xs cursor-pointer duration-200"
                     >
                       Save changes
                     </button>
@@ -168,7 +175,7 @@ const Settings = () => {
             </div>
 
             {/* Profile/System Summary Column */}
-            <div className="glass-card p-8 rounded-2xl border border-[#2E2E2E] flex flex-col justify-between relative overflow-hidden bg-gradient-to-br from-[#1E1E1E] to-[#121212]">
+            <div className="glass-card p-8 rounded-2xl border border-[var(--border-color)] flex flex-col justify-between relative overflow-hidden">
               {/* background highlights */}
               <div className="absolute top-0 right-0 w-32 h-32 bg-[#ff8a00]/5 rounded-full blur-2xl pointer-events-none"></div>
               
@@ -177,27 +184,27 @@ const Settings = () => {
                   <h3 className="text-xs font-extrabold uppercase tracking-widest text-[#ff8a00] mb-1">
                     System Metrics Preview
                   </h3>
-                  <p className="text-[10px] text-zinc-400">Real-time status display of selected ERP parameters.</p>
+                  <p className="text-[10px] text-[var(--color-text-muted)]">Real-time status display of selected ERP parameters.</p>
                 </div>
 
                 <div className="space-y-4 pt-2">
-                  <div className="flex justify-between items-center py-3 border-b border-zinc-800">
-                    <span className="text-xs text-zinc-400">Operational Node</span>
-                    <span className="text-xs text-white font-semibold">{depotName}</span>
+                  <div className="flex justify-between items-center py-3 border-b border-[var(--border-color)]">
+                    <span className="text-xs text-[var(--color-text-muted)]">Operational Node</span>
+                    <span className="text-xs text-[var(--color-text-primary)] font-semibold">{depotName}</span>
                   </div>
 
-                  <div className="flex justify-between items-center py-3 border-b border-zinc-800">
-                    <span className="text-xs text-zinc-400">Billing Currency</span>
-                    <span className="text-xs text-white font-semibold font-mono">{currency}</span>
+                  <div className="flex justify-between items-center py-3 border-b border-[var(--border-color)]">
+                    <span className="text-xs text-[var(--color-text-muted)]">Billing Currency</span>
+                    <span className="text-xs text-[var(--color-text-primary)] font-semibold font-mono">{localCurrency}</span>
                   </div>
 
-                  <div className="flex justify-between items-center py-3 border-b border-zinc-800">
-                    <span className="text-xs text-zinc-400">Metric Scaling</span>
-                    <span className="text-xs text-[#ff8a00] font-semibold">{distanceUnit}</span>
+                  <div className="flex justify-between items-center py-3 border-b border-[var(--border-color)]">
+                    <span className="text-xs text-[var(--color-text-muted)]">Metric Scaling</span>
+                    <span className="text-xs text-[#ff8a00] font-semibold">{localDistanceUnit}</span>
                   </div>
 
                   <div className="flex justify-between items-center py-3">
-                    <span className="text-xs text-zinc-400">System Link Status</span>
+                    <span className="text-xs text-[var(--color-text-muted)]">System Link Status</span>
                     <span className="text-xs text-emerald-400 font-bold flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping glow-bullet"></span>
                       Synchronized
@@ -206,7 +213,7 @@ const Settings = () => {
                 </div>
               </div>
 
-              <div className="bg-[#161616] p-4 rounded-xl border border-[#2E2E2E] flex gap-3 text-[10px] text-zinc-400 items-start leading-relaxed">
+              <div className="bg-[var(--bg-app)] p-4 rounded-xl border border-[var(--border-color)] flex gap-3 text-[10px] text-[var(--color-text-muted)] items-start leading-relaxed mt-6">
                 <span className="material-symbols-outlined text-[#ff8a00] text-[18px] shrink-0">info</span>
                 <p>
                   These config properties govern routing calculations, fuel expense summaries, and billing computations throughout the dashboard interface.

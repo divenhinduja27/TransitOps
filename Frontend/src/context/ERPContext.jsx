@@ -46,31 +46,26 @@ const mapTripStatusFromBackend = (s) => {
 };
 
 // Object Translators
-const mapVehicleFromBackend = (v) => {
-  const parts = v.model ? v.model.trim().split(/\s+/) : [];
-  const make = parts[0] || 'Tata';
-  const model = parts.length > 1 ? parts.slice(1).join(' ') : (parts[0] || '');
-  return {
-    id: v.id,
-    registrationNumber: v.registrationNumber,
-    make: make,
-    model: model,
-    type: v.type || 'Container',
-    capacity: v.maxLoadCapacity || 10000,
-    odometer: v.odometer || 0,
-    acquisitionCost: v.acquisitionCost || 0,
-    status: mapVehicleStatusFromBackend(v.status),
-    region: v.region || 'West',
-    lastServiceDate: ''
-  };
-};
+const mapVehicleFromBackend = (v) => ({
+  id: v.id,
+  registrationNumber: v.registrationNumber,
+  make: v.model ? v.model.split(' ')[0] : 'Tata',
+  model: v.model || '',
+  type: v.type || 'Container',
+  capacity: v.maxLoadCapacity || 10000,
+  odometer: v.odometer || 0,
+  acquisitionCost: v.acquisitionCost || 0,
+  status: mapVehicleStatusFromBackend(v.status),
+  region: v.region || 'West',
+  lastServiceDate: ''
+});
 
 const mapDriverFromBackend = (d) => ({
   id: d.id,
   name: d.name || '',
   licenseNumber: d.licenseNumber || '',
   category: d.licenseCategory || 'LMV',
-  licenseExpiry: d.licenseExpiryDate ? d.licenseExpiryDate.substring(0, 7) : '',
+  licenseExpiry: d.licenseExpiryDate || '',
   status: mapDriverStatusFromBackend(d.status),
   phone: d.contactNumber || '',
   safetyScore: d.safetyScore || 5.0,
@@ -132,6 +127,45 @@ export const ERPProvider = ({ children }) => {
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Currency & Distance Settings
+  const [currency, setCurrencyState] = useState(() => localStorage.getItem('erp_currency') || 'INR (Rs)');
+  const [distanceUnit, setDistanceUnitState] = useState(() => localStorage.getItem('erp_distance_unit') || 'Kilometers');
+
+  const updateCurrency = (newVal) => {
+    localStorage.setItem('erp_currency', newVal);
+    setCurrencyState(newVal);
+  };
+
+  const updateDistanceUnit = (newVal) => {
+    localStorage.setItem('erp_distance_unit', newVal);
+    setDistanceUnitState(newVal);
+  };
+
+  const formatCost = (inrVal) => {
+    const numeric = Number(inrVal) || 0;
+    if (currency === 'USD ($)') {
+      return `$${Math.round(numeric / 80).toLocaleString()}`;
+    }
+    if (currency === 'EUR (€)') {
+      return `€${Math.round(numeric / 90).toLocaleString()}`;
+    }
+    if (currency === 'GBP (£)') {
+      return `£${Math.round(numeric / 100).toLocaleString()}`;
+    }
+    return `₹${Math.round(numeric).toLocaleString('en-IN')}`;
+  };
+
+  const formatDistance = (kmVal) => {
+    const numeric = Number(kmVal) || 0;
+    if (distanceUnit === 'Miles') {
+      return `${Math.round(numeric * 0.621371).toLocaleString()} mi`;
+    }
+    if (distanceUnit === 'Nautical Miles') {
+      return `${Math.round(numeric * 0.539957).toLocaleString()} nm`;
+    }
+    return `${Math.round(numeric).toLocaleString()} km`;
+  };
 
   // Fetch initial data from backend REST APIs
   const fetchAllData = async () => {
@@ -197,7 +231,7 @@ export const ERPProvider = ({ children }) => {
   const editVehicle = async (updatedVehicle) => {
     const backendData = {
       registrationNumber: updatedVehicle.registrationNumber,
-      model: `${updatedVehicle.make} ${updatedVehicle.model}`,
+      model: updatedVehicle.model,
       type: updatedVehicle.type,
       maxLoadCapacity: Number(updatedVehicle.capacity),
       odometer: Number(updatedVehicle.odometer) || 0,
@@ -610,6 +644,12 @@ export const ERPProvider = ({ children }) => {
         expenses,
         loading,
         error,
+        currency,
+        distanceUnit,
+        updateCurrency,
+        updateDistanceUnit,
+        formatCost,
+        formatDistance,
         refreshData: fetchAllData,
         addVehicle,
         editVehicle,

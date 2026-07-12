@@ -102,23 +102,29 @@ const Profile = () => {
     setSuccessMsg('');
     setErrorMsg('');
 
-    setTimeout(() => {
-      try {
-        const updatedDetails = {
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          email: email.trim(),
-          avatar: selectedAvatar
-        };
-
-        updateUser(updatedDetails);
-        setSuccessMsg('Profile credentials updated.');
-      } catch (err) {
-        setErrorMsg('Error committing profile edits.');
-      } finally {
-        setIsLoading(false);
-      }
-    }, 800);
+    try {
+      const payload = {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        avatar: selectedAvatar
+      };
+      
+      const res = await api.put('/auth/profile', payload);
+      
+      // Update local session
+      updateUser({
+        firstName: res.data.firstName,
+        lastName: res.data.lastName,
+        avatar: res.data.avatar
+      });
+      
+      setSuccessMsg('Profile credentials updated on server successfully.');
+    } catch (err) {
+      console.error(err);
+      setErrorMsg(err.response?.data?.error || err.message || 'Error saving details to server database.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Password change handler
@@ -147,9 +153,14 @@ const Profile = () => {
     }, 1000);
   };
 
-  const handleAvatarChange = (avatarUrl) => {
+  const handleAvatarChange = async (avatarUrl) => {
     setSelectedAvatar(avatarUrl);
     updateUser({ avatar: avatarUrl });
+    try {
+      await api.put('/auth/profile', { avatar: avatarUrl });
+    } catch (err) {
+      console.error('Failed to sync avatar with server:', err);
+    }
   };
 
   // Custom avatar submit

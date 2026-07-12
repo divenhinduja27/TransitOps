@@ -9,11 +9,18 @@ const FuelExpenses = () => {
     expenses, 
     maintenance,
     addFuelLog, 
-    addExpense
+    addExpense,
+    currency,
+    distanceUnit,
+    formatCost,
+    formatDistance
   } = useERP();
 
   const [searchQuery, setSearchQuery] = useState('');
   
+  const currencySymbol = currency.includes('$') ? '$' : currency.includes('€') ? '€' : currency.includes('£') ? '£' : '₹';
+  const distanceSuffix = distanceUnit === 'Miles' ? 'mi' : distanceUnit === 'Nautical Miles' ? 'nm' : 'km';
+
   // State for forms
   const [activeForm, setActiveForm] = useState('fuel'); // 'fuel' or 'expense'
   const [fuelData, setFuelData] = useState({
@@ -234,7 +241,7 @@ const FuelExpenses = () => {
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs text-[var(--color-text-muted)] font-bold uppercase">Total Cost (₹)</label>
+                      <label className="text-xs text-[var(--color-text-muted)] font-bold uppercase">Total Cost ({currencySymbol})</label>
                       <input
                         className="form-input"
                         type="number"
@@ -248,7 +255,7 @@ const FuelExpenses = () => {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-xs text-[var(--color-text-muted)] font-bold uppercase">Odometer (km)</label>
+                      <label className="text-xs text-[var(--color-text-muted)] font-bold uppercase">Odometer ({distanceSuffix})</label>
                       <input
                         className="form-input"
                         type="number"
@@ -332,7 +339,7 @@ const FuelExpenses = () => {
                       </select>
                     </div>
                     <div className="space-y-1">
-                      <label className="text-xs text-[var(--color-text-muted)] font-bold uppercase">Amount (₹)</label>
+                      <label className="text-xs text-[var(--color-text-muted)] font-bold uppercase">Amount ({currencySymbol})</label>
                       <input
                         className="form-input"
                         type="number"
@@ -390,23 +397,23 @@ const FuelExpenses = () => {
               <div className="space-y-3 text-sm text-[var(--color-text-secondary)]">
                 <div className="flex justify-between">
                   <span className="text-[var(--color-text-muted)]">Fuel Cost:</span>
-                  <span className="font-mono font-semibold">₹{totalFuelCost.toLocaleString()}</span>
+                  <span className="font-mono font-semibold">{formatCost(totalFuelCost)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[var(--color-text-muted)]">Maintenance Cost:</span>
-                  <span className="font-mono font-semibold">₹{totalMaintenanceCost.toLocaleString()}</span>
+                  <span className="font-mono font-semibold">{formatCost(totalMaintenanceCost)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[var(--color-text-muted)]">Toll Charges:</span>
-                  <span className="font-mono font-semibold">₹{totalTollCharges.toLocaleString()}</span>
+                  <span className="font-mono font-semibold">{formatCost(totalTollCharges)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[var(--color-text-muted)]">Miscellaneous Expenses:</span>
-                  <span className="font-mono font-semibold">₹{totalMiscExpenses.toLocaleString()}</span>
+                  <span className="font-mono font-semibold">{formatCost(totalMiscExpenses)}</span>
                 </div>
                 <div className="flex justify-between border-t border-[var(--border-color)] pt-3 text-base font-bold text-[var(--color-text-primary)]">
                   <span>Total Operational Cost:</span>
-                  <span className="font-mono text-[#ff8a00]">₹{grandTotalOpex.toLocaleString()}</span>
+                  <span className="font-mono text-[#ff8a00]">{formatCost(grandTotalOpex)}</span>
                 </div>
               </div>
             </div>
@@ -442,8 +449,8 @@ const FuelExpenses = () => {
                           <td className="py-2 px-2 text-xs font-mono">{f.date}</td>
                           <td className="py-2 px-2 text-xs font-bold text-[#ff8a00]">{getVehicleReg(f.vehicleId)}</td>
                           <td className="py-2 px-2 text-xs text-right font-mono">{f.liters} L</td>
-                          <td className="py-2 px-2 text-xs text-right font-mono">{f.odometer.toLocaleString()} km</td>
-                          <td className="py-2 px-2 text-xs text-right font-mono font-bold text-[#ff8a00]">₹{f.cost.toLocaleString()}</td>
+                          <td className="py-2 px-2 text-xs text-right font-mono">{formatDistance(f.odometer)}</td>
+                          <td className="py-2 px-2 text-xs text-right font-mono font-bold text-[#ff8a00]">{formatCost(f.cost)}</td>
                         </tr>
                       ))
                     )}
@@ -481,7 +488,7 @@ const FuelExpenses = () => {
                           <td className="py-2 px-2 text-xs font-bold text-[#ff8a00]">{getVehicleReg(e.vehicleId)}</td>
                           <td className="py-2 px-2 text-xs">{e.type}</td>
                           <td className="py-2 px-2 text-xs text-[var(--color-text-muted)]">{e.description}</td>
-                          <td className="py-2 px-2 text-xs text-right font-mono font-bold text-[#ff8a00]">₹{e.amount.toLocaleString()}</td>
+                          <td className="py-2 px-2 text-xs text-right font-mono font-bold text-[#ff8a00]">{formatCost(e.amount)}</td>
                         </tr>
                       ))
                     )}

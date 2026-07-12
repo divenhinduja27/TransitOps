@@ -9,6 +9,7 @@ const TripManagement = () => {
     trips, 
     createTrip, 
     updateTripStatus,
+    formatDistance,
     getSmartVehicleRecommendations 
   } = useERP();
   const [searchQuery, setSearchQuery] = useState('');
@@ -455,7 +456,7 @@ const TripManagement = () => {
                         </div>
 
                         <div className="flex flex-row sm:flex-col justify-end items-center sm:items-end gap-2">
-                          <span className="text-sm font-mono font-bold text-[#ff8a00] mb-0 sm:mb-2">{trip.plannedDistance ? `${trip.plannedDistance} km` : 'N/A'}</span>
+                          <span className="text-sm font-mono font-bold text-[#ff8a00] mb-0 sm:mb-2">{trip.plannedDistance ? formatDistance(trip.plannedDistance) : 'N/A'}</span>
                           <div className="flex gap-2">
                             {trip.status === 'Pending' && (
                               <button
