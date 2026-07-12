@@ -46,26 +46,31 @@ const mapTripStatusFromBackend = (s) => {
 };
 
 // Object Translators
-const mapVehicleFromBackend = (v) => ({
-  id: v.id,
-  registrationNumber: v.registrationNumber,
-  make: v.model ? v.model.split(' ')[0] : 'Tata',
-  model: v.model || '',
-  type: v.type || 'Container',
-  capacity: v.maxLoadCapacity || 10000,
-  odometer: v.odometer || 0,
-  acquisitionCost: v.acquisitionCost || 0,
-  status: mapVehicleStatusFromBackend(v.status),
-  region: v.region || 'West',
-  lastServiceDate: ''
-});
+const mapVehicleFromBackend = (v) => {
+  const parts = v.model ? v.model.trim().split(/\s+/) : [];
+  const make = parts[0] || 'Tata';
+  const model = parts.length > 1 ? parts.slice(1).join(' ') : (parts[0] || '');
+  return {
+    id: v.id,
+    registrationNumber: v.registrationNumber,
+    make: make,
+    model: model,
+    type: v.type || 'Container',
+    capacity: v.maxLoadCapacity || 10000,
+    odometer: v.odometer || 0,
+    acquisitionCost: v.acquisitionCost || 0,
+    status: mapVehicleStatusFromBackend(v.status),
+    region: v.region || 'West',
+    lastServiceDate: ''
+  };
+};
 
 const mapDriverFromBackend = (d) => ({
   id: d.id,
   name: d.name || '',
   licenseNumber: d.licenseNumber || '',
   category: d.licenseCategory || 'LMV',
-  licenseExpiry: d.licenseExpiryDate || '',
+  licenseExpiry: d.licenseExpiryDate ? d.licenseExpiryDate.substring(0, 7) : '',
   status: mapDriverStatusFromBackend(d.status),
   phone: d.contactNumber || '',
   safetyScore: d.safetyScore || 5.0,
@@ -189,7 +194,7 @@ export const ERPProvider = ({ children }) => {
   const editVehicle = async (updatedVehicle) => {
     const backendData = {
       registrationNumber: updatedVehicle.registrationNumber,
-      model: updatedVehicle.model,
+      model: `${updatedVehicle.make} ${updatedVehicle.model}`,
       type: updatedVehicle.type,
       maxLoadCapacity: Number(updatedVehicle.capacity),
       odometer: Number(updatedVehicle.odometer) || 0,

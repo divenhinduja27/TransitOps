@@ -19,6 +19,15 @@ const TripManagement = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // Complete Trip modal state
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [completeTripId, setCompleteTripId] = useState(null);
+  const [completionData, setCompletionData] = useState({
+    finalOdometer: '',
+    fuelConsumed: '',
+    fuelCost: ''
+  });
+
   // Check if driver license is expired
   const isLicenseExpired = (expiryDate) => {
     if (!expiryDate) return false;
@@ -37,7 +46,43 @@ const TripManagement = () => {
     !isLicenseExpired(d.licenseExpiry)
   );
 
-  const handleSubmit = (e) => {
+  const handleUpdateStatus = async (tripId, status, details = {}) => {
+    setError('');
+    setSuccess('');
+    try {
+      await updateTripStatus(tripId, status, details);
+      setSuccess(`Trip status updated to ${status}.`);
+    } catch (err) {
+      setError(err.response?.data?.error || err.message);
+    }
+  };
+
+  const handleOpenCompleteModal = (tripId) => {
+    setCompleteTripId(tripId);
+    setCompletionData({
+      finalOdometer: '',
+      fuelConsumed: '',
+      fuelCost: ''
+    });
+    setError('');
+    setSuccess('');
+    setShowCompleteModal(true);
+  };
+
+  const handleCompleteSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    try {
+      await updateTripStatus(completeTripId, 'Completed', completionData);
+      setSuccess('Trip successfully completed.');
+      setShowCompleteModal(false);
+    } catch (err) {
+      setError(err.response?.data?.error || err.message);
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -52,7 +97,7 @@ const TripManagement = () => {
     }
 
     try {
-      const newTrip = createTrip(formData);
+      const newTrip = await createTrip(formData);
       setSuccess(`Trip ${newTrip.tripId} successfully dispatched.`);
       setFormData({
         vehicleId: '',
@@ -64,7 +109,7 @@ const TripManagement = () => {
         status: 'Dispatched'
       });
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.error || err.message);
     }
   };
 
@@ -293,9 +338,9 @@ const TripManagement = () => {
                         <div className="flex flex-row sm:flex-col justify-end items-center sm:items-end gap-2">
                           <span className="text-sm font-mono font-bold text-[#ff8a00] mb-0 sm:mb-2">{trip.plannedDistance ? `${trip.plannedDistance} km` : 'N/A'}</span>
                           <div className="flex gap-2">
-                            {trip.status === 'Draft' && (
+                            {trip.status === 'Pending' && (
                               <button
-                                onClick={() => updateTripStatus(trip.id, 'Dispatched')}
+                                onClick={() => handleUpdateStatus(trip.id, 'Dispatched')}
                                 className="bg-[#ff8a00] text-black px-3 py-1 rounded text-xs font-bold hover:opacity-90 transition-all cursor-pointer"
                               >
                                 Dispatch
@@ -304,13 +349,13 @@ const TripManagement = () => {
                             {trip.status === 'Dispatched' && (
                               <>
                                 <button
-                                  onClick={() => updateTripStatus(trip.id, 'Completed')}
+                                  onClick={() => handleOpenCompleteModal(trip.id)}
                                   className="bg-green-500/20 text-green-400 border border-green-500/30 px-3 py-1 rounded text-xs font-bold hover:bg-green-500/30 transition-all cursor-pointer"
                                 >
                                   Complete
                                 </button>
                                 <button
-                                  onClick={() => updateTripStatus(trip.id, 'Cancelled')}
+                                  onClick={() => handleUpdateStatus(trip.id, 'Cancelled')}
                                   className="bg-red-500/20 text-red-400 border border-red-500/30 px-3 py-1 rounded text-xs font-bold hover:bg-red-500/30 transition-all cursor-pointer"
                                 >
                                   Cancel
@@ -327,6 +372,75 @@ const TripManagement = () => {
             </div>
           </div>
         </div>
+        {/* COMPLETE TRIP MODAL */}
+        {showCompleteModal && (
+          <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+            <div className="glass-card w-full max-w-md rounded-xl p-6 relative border border-white/10 shadow-2xl">
+              <h3 className="text-lg font-bold border-b border-[#2E2E2E] pb-3 mb-4 flex items-center gap-2">
+                <span className="material-symbols-outlined text-[#ff8a00]">task_alt</span>
+                Complete Trip & Record Metrics
+              </h3>
+              {error && (
+                <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg text-xs flex gap-2">
+                  <span className="material-symbols-outlined text-[16px]">error</span>
+                  <span>{error}</span>
+                </div>
+              )}
+              <form onSubmit={handleCompleteSubmit} className="space-y-4 text-xs">
+                <div className="space-y-1">
+                  <label className="text-xs text-on-surface-variant/80 font-bold uppercase">Final Odometer (km)</label>
+                  <input
+                    className="form-input"
+                    type="number"
+                    required
+                    placeholder="e.g. 12500"
+                    value={completionData.finalOdometer}
+                    onChange={(e) => setCompletionData({ ...completionData, finalOdometer: e.target.value })}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs text-on-surface-variant/80 font-bold uppercase">Fuel Consumed (Liters)</label>
+                    <input
+                      className="form-input"
+                      type="number"
+                      required
+                      placeholder="e.g. 150"
+                      value={completionData.fuelConsumed}
+                      onChange={(e) => setCompletionData({ ...completionData, fuelConsumed: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-on-surface-variant/80 font-bold uppercase">Fuel Cost ($)</label>
+                    <input
+                      className="form-input"
+                      type="number"
+                      required
+                      placeholder="e.g. 14250"
+                      value={completionData.fuelCost}
+                      onChange={(e) => setCompletionData({ ...completionData, fuelCost: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-3 justify-end pt-4 border-t border-[#2E2E2E]">
+                  <button
+                    type="button"
+                    onClick={() => setShowCompleteModal(false)}
+                    className="px-4 py-2 bg-transparent text-on-surface-variant hover:text-white text-sm font-semibold rounded cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-green-500 text-black text-sm font-bold rounded hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+                  >
+                    Complete Trip
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </main>
     </>
   );

@@ -25,26 +25,26 @@ const DriverManagement = () => {
   });
   const [error, setError] = useState('');
 
-  const handleAddSubmit = (e) => {
+  const handleAddSubmit = async (e) => {
     e.preventDefault();
     setError('');
     try {
-      addDriver(formData);
+      await addDriver(formData);
       setShowAddModal(false);
       resetForm();
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.error || err.message);
     }
   };
 
-  const handleEditSubmit = (e) => {
+  const handleEditSubmit = async (e) => {
     e.preventDefault();
     setError('');
     try {
-      editDriver(currentDriver);
+      await editDriver(currentDriver);
       setShowEditModal(false);
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.error || err.message);
     }
   };
 
@@ -68,12 +68,12 @@ const DriverManagement = () => {
     setShowEditModal(true);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this driver?')) {
       try {
-        deleteDriver(id);
+        await deleteDriver(id);
       } catch (err) {
-        alert(err.message);
+        alert(err.response?.data?.error || err.message);
       }
     }
   };

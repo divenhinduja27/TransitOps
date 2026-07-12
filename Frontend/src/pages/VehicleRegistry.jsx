@@ -19,32 +19,34 @@ const VehicleRegistry = () => {
     model: '',
     type: 'Container',
     capacity: '',
-    lastServiceDate: new Date().toISOString().split('T')[0]
+    odometer: '',
+    acquisitionCost: '',
+    region: 'West'
   });
   const [error, setError] = useState('');
 
   // Handle Add Form Submit
-  const handleAddSubmit = (e) => {
+  const handleAddSubmit = async (e) => {
     e.preventDefault();
     setError('');
     try {
-      addVehicle(formData);
+      await addVehicle(formData);
       setShowAddModal(false);
       resetForm();
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.error || err.message);
     }
   };
 
   // Handle Edit Form Submit
-  const handleEditSubmit = (e) => {
+  const handleEditSubmit = async (e) => {
     e.preventDefault();
     setError('');
     try {
-      editVehicle(currentVehicle);
+      await editVehicle(currentVehicle);
       setShowEditModal(false);
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.error || err.message);
     }
   };
 
@@ -55,23 +57,30 @@ const VehicleRegistry = () => {
       model: '',
       type: 'Container',
       capacity: '',
-      lastServiceDate: new Date().toISOString().split('T')[0]
+      odometer: '',
+      acquisitionCost: '',
+      region: 'West'
     });
     setError('');
   };
 
   const openEditModal = (vehicle) => {
-    setCurrentVehicle({ ...vehicle });
+    setCurrentVehicle({
+      ...vehicle,
+      odometer: vehicle.odometer || 0,
+      acquisitionCost: vehicle.acquisitionCost || 0,
+      region: vehicle.region || 'West'
+    });
     setError('');
     setShowEditModal(true);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this vehicle from the registry?')) {
       try {
-        deleteVehicle(id);
+        await deleteVehicle(id);
       } catch (err) {
-        alert(err.message);
+        alert(err.response?.data?.error || err.message);
       }
     }
   };
@@ -166,8 +175,10 @@ const VehicleRegistry = () => {
                     <th className="py-4 px-4">Registration</th>
                     <th className="py-4 px-4">Manufacturer & Model</th>
                     <th className="py-4 px-4">Type</th>
-                    <th className="py-4 px-4 text-right">Max Load Capacity</th>
-                    <th className="py-4 px-4">Last Service</th>
+                    <th className="py-4 px-4 text-right">Max Capacity</th>
+                    <th className="py-4 px-4 text-right">Odometer</th>
+                    <th className="py-4 px-4 text-right">Acq. Cost</th>
+                    <th className="py-4 px-4">Region</th>
                     <th className="py-4 px-4 text-center">Status</th>
                     <th className="py-4 px-4 text-center">Actions</th>
                   </tr>
@@ -175,7 +186,7 @@ const VehicleRegistry = () => {
                 <tbody className="divide-y divide-[var(--border-color)]/40">
                   {filteredVehicles.length === 0 ? (
                     <tr>
-                      <td colSpan="7" className="py-12 text-center text-on-surface-variant/40">
+                      <td colSpan="9" className="py-12 text-center text-on-surface-variant/40">
                         No fleet vehicles match the active filters.
                       </td>
                     </tr>
@@ -193,11 +204,14 @@ const VehicleRegistry = () => {
                           </span>
                         </td>
                         <td className="py-4 px-4 text-right font-mono font-bold">{(vehicle.capacity).toLocaleString()} kg</td>
-                        <td className="py-4 px-4 text-xs font-mono text-on-surface-variant/80">{vehicle.lastServiceDate || 'N/A'}</td>
+                        <td className="py-4 px-4 text-right font-mono">{(vehicle.odometer || 0).toLocaleString()} km</td>
+                        <td className="py-4 px-4 text-right font-mono">${(vehicle.acquisitionCost || 0).toLocaleString()}</td>
+                        <td className="py-4 px-4 text-xs font-semibold text-on-surface-variant/90">{vehicle.region || 'N/A'}</td>
                         <td className="py-4 px-4 text-center">
                           <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold ${
                             vehicle.status === 'Available' ? 'bg-green-500/10 text-green-400 border border-green-500/30' :
                             vehicle.status === 'Dispatched' ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/30' :
+                            vehicle.status === 'In Shop' ? 'bg-orange-500/10 text-orange-400 border border-orange-500/30' :
                             'bg-red-500/10 text-red-400 border border-red-500/30'
                           }`}>
                             {vehicle.status}
@@ -310,14 +324,39 @@ const VehicleRegistry = () => {
                     />
                   </div>
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs text-on-surface-variant/80 font-bold uppercase">Odometer (km)</label>
+                    <input
+                      className="form-input"
+                      type="number"
+                      required
+                      placeholder="e.g. 15000"
+                      value={formData.odometer}
+                      onChange={(e) => setFormData({ ...formData, odometer: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-on-surface-variant/80 font-bold uppercase">Acquisition Cost ($)</label>
+                    <input
+                      className="form-input"
+                      type="number"
+                      required
+                      placeholder="e.g. 45000"
+                      value={formData.acquisitionCost}
+                      onChange={(e) => setFormData({ ...formData, acquisitionCost: e.target.value })}
+                    />
+                  </div>
+                </div>
                 <div className="space-y-1">
-                  <label className="text-xs text-on-surface-variant/80 font-bold uppercase">Last Service Date</label>
+                  <label className="text-xs text-on-surface-variant/80 font-bold uppercase">Region</label>
                   <input
                     className="form-input"
-                    type="date"
+                    type="text"
                     required
-                    value={formData.lastServiceDate}
-                    onChange={(e) => setFormData({ ...formData, lastServiceDate: e.target.value })}
+                    placeholder="e.g. West, North-East"
+                    value={formData.region}
+                    onChange={(e) => setFormData({ ...formData, region: e.target.value })}
                   />
                 </div>
                 <div className="flex gap-3 justify-end pt-4 border-t border-[#2E2E2E]">
@@ -416,15 +455,52 @@ const VehicleRegistry = () => {
                     />
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs text-on-surface-variant/80 font-bold uppercase">Last Service Date</label>
-                  <input
-                    className="form-input"
-                    type="date"
-                    required
-                    value={currentVehicle.lastServiceDate}
-                    onChange={(e) => setCurrentVehicle({ ...currentVehicle, lastServiceDate: e.target.value })}
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs text-on-surface-variant/80 font-bold uppercase">Odometer (km)</label>
+                    <input
+                      className="form-input"
+                      type="number"
+                      required
+                      value={currentVehicle.odometer}
+                      onChange={(e) => setCurrentVehicle({ ...currentVehicle, odometer: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-on-surface-variant/80 font-bold uppercase">Acquisition Cost ($)</label>
+                    <input
+                      className="form-input"
+                      type="number"
+                      required
+                      value={currentVehicle.acquisitionCost}
+                      onChange={(e) => setCurrentVehicle({ ...currentVehicle, acquisitionCost: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs text-on-surface-variant/80 font-bold uppercase">Region</label>
+                    <input
+                      className="form-input"
+                      type="text"
+                      required
+                      value={currentVehicle.region}
+                      onChange={(e) => setCurrentVehicle({ ...currentVehicle, region: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs text-on-surface-variant/80 font-bold uppercase">Status</label>
+                    <select
+                      className="form-input bg-[#161616]"
+                      value={currentVehicle.status}
+                      onChange={(e) => setCurrentVehicle({ ...currentVehicle, status: e.target.value })}
+                    >
+                      <option value="Available">Available</option>
+                      <option value="Dispatched">Dispatched</option>
+                      <option value="In Shop">In Shop</option>
+                      <option value="Retired">Retired</option>
+                    </select>
+                  </div>
                 </div>
                 <div className="flex gap-3 justify-end pt-4 border-t border-[#2E2E2E]">
                   <button
