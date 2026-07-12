@@ -5,6 +5,7 @@ import com.yadg.TransitOp.entity.User;
 import com.yadg.TransitOp.repository.RoleRepository;
 import com.yadg.TransitOp.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -16,10 +17,12 @@ public class DataInitializer implements CommandLineRunner {
 
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public DataInitializer(RoleRepository roleRepository, UserRepository userRepository) {
+    public DataInitializer(RoleRepository roleRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.roleRepository = roleRepository;
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -40,20 +43,28 @@ public class DataInitializer implements CommandLineRunner {
 
         // Seed default Fleet Manager user if none exists
         String defaultEmail = "admin@transitops.com";
-        if (userRepository.findByEmail(defaultEmail).isEmpty()) {
+        java.util.Optional<User> existingUserOpt = userRepository.findByEmail(defaultEmail);
+        if (existingUserOpt.isEmpty()) {
             Role fleetManagerRole = roleRepository.findByName("ROLE_FLEET_MANAGER")
                 .orElseThrow(() -> new RuntimeException("ROLE_FLEET_MANAGER not found"));
 
             User defaultAdmin = User.builder()
                 .email(defaultEmail)
-                .password("admin123") // Note: In a real-world scenario, this password should be hashed (e.g. BCrypt)
+                .password(passwordEncoder.encode("admin123"))
                 .firstName("Default")
                 .lastName("Admin")
                 .roles(new HashSet<>(Arrays.asList(fleetManagerRole)))
                 .build();
 
             userRepository.save(defaultAdmin);
-            System.out.println("Default Fleet Manager user created: " + defaultEmail);
+            System.out.println("Default Fleet Manager user created with encrypted password: " + defaultEmail);
+        } else {
+            User existingUser = existingUserOpt.get();
+            if (!existingUser.getPassword().startsWith("$2a$")) {
+                existingUser.setPassword(passwordEncoder.encode("admin123"));
+                userRepository.save(existingUser);
+                System.out.println("Default Fleet Manager user password upgraded to BCrypt hash.");
+            }
         }
     }
 }
