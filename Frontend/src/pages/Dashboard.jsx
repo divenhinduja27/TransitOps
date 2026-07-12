@@ -18,7 +18,7 @@ const CITY_COORDS = {
 };
 
 const Dashboard = () => {
-  const { vehicles, drivers, trips } = useERP();
+  const { vehicles, drivers, trips, loading, error } = useERP();
   const [searchQuery, setSearchQuery] = useState('');
   
   // Dashboard Filters
@@ -392,6 +392,35 @@ const Dashboard = () => {
     });
 
   }, [filteredVehicles, filteredTrips, animationProgress]);
+
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#0E0E0E]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#ff8a00] border-t-transparent"></div>
+          <p className="text-sm font-semibold text-gray-400">Loading TransitOps Dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#0E0E0E] text-white">
+        <div className="glass-card p-8 rounded-xl max-w-md text-center space-y-4">
+          <span className="material-symbols-outlined text-[#EF4444] text-[48px]">error</span>
+          <h3 className="text-xl font-bold">Connection Error</h3>
+          <p className="text-sm text-gray-400">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-[#ff8a00] rounded-lg text-sm font-bold hover:bg-[#ff8a00]/90 transition"
+          >
+            Retry Connection
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

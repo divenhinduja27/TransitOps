@@ -1,118 +1,121 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import api from '../services/api';
 
 const ERPContext = createContext(null);
 
-const INITIAL_VEHICLES = [
-  { id: 'V-101', registrationNumber: 'MH-12-GQ-4432', make: 'Volvo', model: 'FH16 Heavy Container', type: 'Container', capacity: 25000, status: 'Available', lastServiceDate: '2026-05-10' },
-  { id: 'V-102', registrationNumber: 'DL-1C-AH-9821', make: 'Tata', model: 'Signa 2823.K', type: 'Heavy Truck', capacity: 18000, status: 'Available', lastServiceDate: '2026-06-15' },
-  { id: 'V-103', registrationNumber: 'KA-03-MM-7110', make: 'BharatBenz', model: 'Gigashield 4023T', type: 'Flatbed', capacity: 22000, status: 'Dispatched', lastServiceDate: '2026-06-20' },
-  { id: 'V-104', registrationNumber: 'HR-55-XY-0045', make: 'Mahindra', model: 'Blazo X 35', type: 'Tanker', capacity: 20000, status: 'Available', lastServiceDate: '2026-07-01' },
-  { id: 'V-105', registrationNumber: 'MH-43-P-8821', make: 'Volvo', model: 'FMX 460', type: 'Dumper', capacity: 16000, status: 'In Shop', lastServiceDate: '2026-07-09' },
-  { id: 'V-106', registrationNumber: 'GJ-01-ZZ-5645', make: 'Eicher', model: 'Pro 6028', type: 'Cargo Van', capacity: 8000, status: 'Available', lastServiceDate: '2026-05-22' },
-  { id: 'V-107', registrationNumber: 'WB-20-AB-1234', make: 'Tata', model: 'Ultra T.16', type: 'Box Truck', capacity: 10000, status: 'Dispatched', lastServiceDate: '2026-06-30' },
-  { id: 'V-108', registrationNumber: 'TN-07-CD-5678', make: 'Scania', model: 'R500', type: 'Trailer', capacity: 28000, status: 'Available', lastServiceDate: '2026-07-11' }
-];
+// Status Translation Helpers
+const mapVehicleStatusFromBackend = (s) => {
+  if (s === 'AVAILABLE') return 'Available';
+  if (s === 'ON_TRIP') return 'Dispatched';
+  if (s === 'IN_SHOP') return 'In Shop';
+  if (s === 'RETIRED') return 'Retired';
+  return 'Available';
+};
 
-const INITIAL_DRIVERS = [
-  { id: 'D-201', name: 'Rajesh Kumar', licenseNumber: 'DL-14202100456', licenseExpiry: '2028-12-10', status: 'Available', phone: '+91 98765 43210' },
-  { id: 'D-202', name: 'Sandeep Singh', licenseNumber: 'HR-26201900891', licenseExpiry: '2027-08-15', status: 'Available', phone: '+91 99112 23344' },
-  { id: 'D-203', name: 'Amit Sharma', licenseNumber: 'KA-51202300012', licenseExpiry: '2026-03-20', status: 'Expired', phone: '+91 98223 34455' },
-  { id: 'D-204', name: 'Vijay Yadav', licenseNumber: 'MH-12201800561', licenseExpiry: '2029-01-30', status: 'Available', phone: '+91 97665 43210' },
-  { id: 'D-205', name: 'Gurnam Singh', licenseNumber: 'PB-65201500344', licenseExpiry: '2025-06-05', status: 'Suspended', phone: '+91 94112 88990' },
-  { id: 'D-206', name: 'Arjun Patil', licenseNumber: 'MH-43202200455', licenseExpiry: '2031-10-15', status: 'Active', phone: '+91 95443 12345' },
-  { id: 'D-207', name: 'Anil Banerjee', licenseNumber: 'WB-02202000234', licenseExpiry: '2027-11-20', status: 'Active', phone: '+91 98300 12345' },
-  { id: 'D-208', name: 'Pradeep Pillai', licenseNumber: 'TN-01202400982', licenseExpiry: '2026-08-05', status: 'Available', phone: '+91 91760 98765' }
-];
+const mapVehicleStatusToBackend = (s) => {
+  if (s === 'Available') return 'AVAILABLE';
+  if (s === 'Dispatched') return 'ON_TRIP';
+  if (s === 'In Shop') return 'IN_SHOP';
+  if (s === 'Retired') return 'RETIRED';
+  return 'AVAILABLE';
+};
 
-const INITIAL_TRIPS = [
-  { id: 'T-1001', tripId: 'TRP-1001', vehicleId: 'V-103', driverId: 'D-206', origin: 'Mumbai Port (JNPT)', destination: 'Pune Logistics Park', cargoWeight: 18000, status: 'Dispatched', startDate: '2026-07-11', endDate: '', cost: 12500 },
-  { id: 'T-1002', tripId: 'TRP-1002', vehicleId: 'V-107', driverId: 'D-207', origin: 'Delhi Cargo Hub', destination: 'Jaipur Industrial Area', cargoWeight: 9500, status: 'Dispatched', startDate: '2026-07-12', endDate: '', cost: 8900 },
-  { id: 'T-1003', tripId: 'TRP-1003', vehicleId: 'V-101', driverId: 'D-201', origin: 'Kolkata Port', destination: 'Patna Warehouse', cargoWeight: 24000, status: 'Completed', startDate: '2026-07-08', endDate: '2026-07-10', cost: 22000 },
-  { id: 'T-1004', tripId: 'TRP-1004', vehicleId: 'V-102', driverId: 'D-202', origin: 'Chennai Dockyard', destination: 'Bangalore Depot', cargoWeight: 15000, status: 'Completed', startDate: '2026-07-05', endDate: '2026-07-07', cost: 14000 },
-  { id: 'T-1005', tripId: 'TRP-1005', vehicleId: 'V-108', driverId: 'D-208', origin: 'Bangalore Logistics Park', destination: 'Hyderabad Terminal', cargoWeight: 20000, status: 'Completed', startDate: '2026-07-02', endDate: '2026-07-04', cost: 18000 }
-];
+const mapDriverStatusFromBackend = (s) => {
+  if (s === 'AVAILABLE') return 'Available';
+  if (s === 'ON_TRIP') return 'Active';
+  if (s === 'OFF_DUTY') return 'Off Duty';
+  if (s === 'SUSPENDED') return 'Suspended';
+  return 'Available';
+};
 
-const INITIAL_MAINTENANCE = [
-  { id: 'M-301', vehicleId: 'V-105', serviceType: 'Engine Overhaul & Oil Filter Replacement', cost: 45000, startDate: '2026-07-09', endDate: '', status: 'In Progress' },
-  { id: 'M-302', vehicleId: 'V-102', serviceType: 'Brake Pad Replacement & Suspension Alignment', cost: 12000, startDate: '2026-06-12', endDate: '2026-06-15', status: 'Completed' }
-];
+const mapDriverStatusToBackend = (s) => {
+  if (s === 'Available') return 'AVAILABLE';
+  if (s === 'Active') return 'ON_TRIP';
+  if (s === 'Off Duty') return 'OFF_DUTY';
+  if (s === 'Suspended') return 'SUSPENDED';
+  return 'AVAILABLE';
+};
 
-const INITIAL_FUEL_LOGS = [
-  { id: 'FL-401', vehicleId: 'V-101', date: '2026-07-09', liters: 120, cost: 11400, odometer: 24500 },
-  { id: 'FL-402', vehicleId: 'V-103', date: '2026-07-11', liters: 150, cost: 14250, odometer: 12300 },
-  { id: 'FL-403', vehicleId: 'V-107', date: '2026-07-12', liters: 80, cost: 7600, odometer: 34100 },
-  { id: 'FL-404', vehicleId: 'V-102', date: '2026-07-06', liters: 90, cost: 8550, odometer: 18900 }
-];
+const mapTripStatusFromBackend = (s) => {
+  if (s === 'DRAFT') return 'Pending';
+  if (s === 'DISPATCHED') return 'Dispatched';
+  if (s === 'COMPLETED') return 'Completed';
+  if (s === 'CANCELLED') return 'Cancelled';
+  return 'Pending';
+};
 
-const INITIAL_EXPENSES = [
-  { id: 'E-501', vehicleId: 'V-103', type: 'Toll Charges', amount: 2400, date: '2026-07-11', description: 'NH-4 Toll Tax for Pune Trip' },
-  { id: 'E-502', vehicleId: 'V-107', type: 'Driver Allowance', amount: 1500, date: '2026-07-12', description: 'Meal & Night Halt Allowance' },
-  { id: 'E-503', vehicleId: 'V-101', type: 'State Permit Fee', amount: 4500, date: '2026-07-08', description: 'UP State Entry Permit' }
-];
+// Object Translators
+const mapVehicleFromBackend = (v) => ({
+  id: v.id,
+  registrationNumber: v.registrationNumber,
+  make: v.model ? v.model.split(' ')[0] : 'Tata',
+  model: v.model || '',
+  type: v.type || 'Container',
+  capacity: v.maxLoadCapacity || 10000,
+  odometer: v.odometer || 0,
+  acquisitionCost: v.acquisitionCost || 0,
+  status: mapVehicleStatusFromBackend(v.status),
+  region: v.region || 'West',
+  lastServiceDate: ''
+});
+
+const mapDriverFromBackend = (d) => ({
+  id: d.id,
+  name: d.name || '',
+  licenseNumber: d.licenseNumber || '',
+  licenseExpiry: d.licenseExpiryDate || '',
+  status: mapDriverStatusFromBackend(d.status),
+  phone: d.contactNumber || '',
+  safetyScore: d.safetyScore || 5.0
+});
+
+const mapTripFromBackend = (t) => ({
+  id: t.id,
+  tripId: `TRP-${1000 + t.id}`,
+  vehicleId: t.vehicleId,
+  driverId: t.driverId,
+  origin: t.source || '',
+  destination: t.destination || '',
+  cargoWeight: t.cargoWeight || 0,
+  status: mapTripStatusFromBackend(t.status),
+  startDate: t.dispatchedAt ? t.dispatchedAt.split('T')[0] : '',
+  endDate: t.completedAt ? t.completedAt.split('T')[0] : '',
+  cost: t.plannedDistance ? Math.round(t.plannedDistance * 50) : 0
+});
+
+const mapMaintenanceFromBackend = (m) => ({
+  id: m.id,
+  vehicleId: m.vehicleId,
+  serviceType: m.description || '',
+  cost: m.cost || 0,
+  startDate: m.logDate ? m.logDate.split('T')[0] : '',
+  endDate: m.closedAt ? m.closedAt.split('T')[0] : '',
+  status: m.status === 'ACTIVE' ? 'In Progress' : 'Completed'
+});
 
 export const ERPProvider = ({ children }) => {
-  const [vehicles, setVehicles] = useState(() => {
-    const local = localStorage.getItem('erp_vehicles');
-    let loaded = local ? JSON.parse(local) : INITIAL_VEHICLES;
-    const hasRetired = loaded.some(v => v.status === 'Retired');
-    if (!hasRetired) {
-      loaded = [
-        ...loaded,
-        { id: 'V-109', registrationNumber: 'MH-12-RS-9981', make: 'Ashok Leyland', model: 'Taurus 2518', type: 'Dumper', capacity: 15000, status: 'Retired', lastServiceDate: '2025-10-12' },
-        { id: 'V-110', registrationNumber: 'DL-3C-BB-0092', make: 'Tata', model: 'LPT 1613', type: 'Cargo Van', capacity: 9000, status: 'Retired', lastServiceDate: '2024-04-18' }
-      ];
-    }
-    return loaded;
-  });
+  const [vehicles, setVehicles] = useState([]);
+  const [drivers, setDrivers] = useState([]);
+  const [trips, setTrips] = useState([]);
+  const [maintenance, setMaintenance] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const [drivers, setDrivers] = useState(() => {
-    const local = localStorage.getItem('erp_drivers');
-    return local ? JSON.parse(local) : INITIAL_DRIVERS;
-  });
-
-  const [trips, setTrips] = useState(() => {
-    const local = localStorage.getItem('erp_trips');
-    let loaded = local ? JSON.parse(local) : INITIAL_TRIPS;
-    const hasPending = loaded.some(t => t.status === 'Pending');
-    if (!hasPending) {
-      loaded = [
-        ...loaded,
-        { id: 'T-1006', tripId: 'TRP-1006', vehicleId: 'V-104', driverId: 'D-204', origin: 'Bangalore Depot', destination: 'Chennai Dockyard', cargoWeight: 12000, status: 'Pending', startDate: '2026-07-12', endDate: '', cost: 11000 }
-      ];
-    }
-    return loaded;
-  });
-
-  const [maintenance, setMaintenance] = useState(() => {
-    const local = localStorage.getItem('erp_maintenance');
-    return local ? JSON.parse(local) : INITIAL_MAINTENANCE;
-  });
-
+  // Maintain local state for fuel/expenses since they are not supported by the backend yet
   const [fuelLogs, setFuelLogs] = useState(() => {
     const local = localStorage.getItem('erp_fuel_logs');
-    return local ? JSON.parse(local) : INITIAL_FUEL_LOGS;
+    return local ? JSON.parse(local) : [
+      { id: 'FL-401', vehicleId: 1, date: '2026-07-09', liters: 120, cost: 11400, odometer: 24500 },
+      { id: 'FL-402', vehicleId: 2, date: '2026-07-11', liters: 150, cost: 14250, odometer: 12300 }
+    ];
   });
 
   const [expenses, setExpenses] = useState(() => {
     const local = localStorage.getItem('erp_expenses');
-    return local ? JSON.parse(local) : INITIAL_EXPENSES;
+    return local ? JSON.parse(local) : [
+      { id: 'E-501', vehicleId: 1, type: 'Toll Charges', amount: 2400, date: '2026-07-11', description: 'NH-4 Toll Tax for Pune Trip' }
+    ];
   });
-
-  useEffect(() => {
-    localStorage.setItem('erp_vehicles', JSON.stringify(vehicles));
-  }, [vehicles]);
-
-  useEffect(() => {
-    localStorage.setItem('erp_drivers', JSON.stringify(drivers));
-  }, [drivers]);
-
-  useEffect(() => {
-    localStorage.setItem('erp_trips', JSON.stringify(trips));
-  }, [trips]);
-
-  useEffect(() => {
-    localStorage.setItem('erp_maintenance', JSON.stringify(maintenance));
-  }, [maintenance]);
 
   useEffect(() => {
     localStorage.setItem('erp_fuel_logs', JSON.stringify(fuelLogs));
@@ -122,206 +125,188 @@ export const ERPProvider = ({ children }) => {
     localStorage.setItem('erp_expenses', JSON.stringify(expenses));
   }, [expenses]);
 
-  // --- VEHICLE ACTIONS ---
-  const addVehicle = (vehicle) => {
-    const exists = vehicles.some(
-      v => v.registrationNumber.toLowerCase().replace(/\s+/g, '') === 
-           vehicle.registrationNumber.toLowerCase().replace(/\s+/g, '')
-    );
-    if (exists) {
-      throw new Error(`Vehicle registration number ${vehicle.registrationNumber} already exists.`);
+  // Fetch initial data from backend REST APIs
+  const fetchAllData = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    setLoading(true);
+    setError(null);
+    try {
+      const [vehiclesRes, driversRes, tripsRes, maintRes] = await Promise.all([
+        api.get('/vehicles'),
+        api.get('/drivers'),
+        api.get('/trips'),
+        api.get('/maintenance')
+      ]);
+
+      setVehicles(vehiclesRes.data.map(mapVehicleFromBackend));
+      setDrivers(driversRes.data.map(mapDriverFromBackend));
+      setTrips(tripsRes.data.map(mapTripFromBackend));
+      setMaintenance(maintRes.data.map(mapMaintenanceFromBackend));
+    } catch (err) {
+      console.error('Failed to fetch ERP data:', err);
+      setError('Failed to connect to backend service.');
+    } finally {
+      setLoading(false);
     }
-    const newVehicle = {
-      ...vehicle,
-      id: `V-${Date.now().toString().slice(-3)}`,
-      capacity: Number(vehicle.capacity),
-      status: 'Available'
+  };
+
+  useEffect(() => {
+    fetchAllData();
+  }, []);
+
+  // Listen to login/logout token changes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      fetchAllData();
     };
-    setVehicles(prev => [...prev, newVehicle]);
-    return newVehicle;
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // --- VEHICLE ACTIONS ---
+  const addVehicle = async (vehicle) => {
+    const backendData = {
+      registrationNumber: vehicle.registrationNumber,
+      model: `${vehicle.make} ${vehicle.model}`,
+      type: vehicle.type,
+      maxLoadCapacity: Number(vehicle.capacity),
+      odometer: Number(vehicle.odometer) || 0,
+      acquisitionCost: Number(vehicle.acquisitionCost) || 0,
+      region: vehicle.region
+    };
+    const res = await api.post('/vehicles', backendData);
+    const mapped = mapVehicleFromBackend(res.data);
+    setVehicles(prev => [...prev, mapped]);
+    return mapped;
   };
 
-  const editVehicle = (updatedVehicle) => {
-    const exists = vehicles.some(
-      v => v.id !== updatedVehicle.id &&
-           v.registrationNumber.toLowerCase().replace(/\s+/g, '') === 
-           updatedVehicle.registrationNumber.toLowerCase().replace(/\s+/g, '')
-    );
-    if (exists) {
-      throw new Error(`Vehicle registration number ${updatedVehicle.registrationNumber} already exists.`);
-    }
-    setVehicles(prev => prev.map(v => v.id === updatedVehicle.id ? { ...v, ...updatedVehicle, capacity: Number(updatedVehicle.capacity) } : v));
+  const editVehicle = async (updatedVehicle) => {
+    const backendData = {
+      registrationNumber: updatedVehicle.registrationNumber,
+      model: updatedVehicle.model,
+      type: updatedVehicle.type,
+      maxLoadCapacity: Number(updatedVehicle.capacity),
+      odometer: Number(updatedVehicle.odometer) || 0,
+      acquisitionCost: Number(updatedVehicle.acquisitionCost) || 0,
+      region: updatedVehicle.region,
+      status: mapVehicleStatusToBackend(updatedVehicle.status)
+    };
+    const res = await api.put(`/vehicles/${updatedVehicle.id}`, backendData);
+    const mapped = mapVehicleFromBackend(res.data);
+    setVehicles(prev => prev.map(v => v.id === updatedVehicle.id ? mapped : v));
   };
 
-  const deleteVehicle = (id) => {
-    const activeTrip = trips.some(t => t.vehicleId === id && t.status === 'Dispatched');
-    if (activeTrip) {
-      throw new Error(`Cannot delete vehicle. It is currently dispatched on an active trip.`);
-    }
+  const deleteVehicle = async (id) => {
+    await api.delete(`/vehicles/${id}`);
     setVehicles(prev => prev.filter(v => v.id !== id));
   };
 
   // --- DRIVER ACTIONS ---
-  const addDriver = (driver) => {
-    const expiryDate = new Date(driver.licenseExpiry);
-    const today = new Date();
-    let status = 'Available';
-    if (expiryDate < today) {
-      status = 'Expired';
-    }
-    const newDriver = {
-      ...driver,
-      id: `D-${Date.now().toString().slice(-3)}`,
-      status
+  const addDriver = async (driver) => {
+    const backendData = {
+      name: driver.name,
+      licenseNumber: driver.licenseNumber,
+      licenseCategory: driver.licenseCategory || 'Class A',
+      licenseExpiryDate: driver.licenseExpiry,
+      contactNumber: driver.phone,
+      safetyScore: Number(driver.safetyScore) || 5.0
     };
-    setDrivers(prev => [...prev, newDriver]);
-    return newDriver;
+    const res = await api.post('/drivers', backendData);
+    const mapped = mapDriverFromBackend(res.data);
+    setDrivers(prev => [...prev, mapped]);
+    return mapped;
   };
 
-  const editDriver = (updatedDriver) => {
-    const expiryDate = new Date(updatedDriver.licenseExpiry);
-    const today = new Date();
-    let status = updatedDriver.status;
-    if (expiryDate < today) {
-      status = 'Expired';
-    } else if (status === 'Expired') {
-      status = 'Available';
-    }
-    setDrivers(prev => prev.map(d => d.id === updatedDriver.id ? { ...d, ...updatedDriver, status } : d));
+  const editDriver = async (updatedDriver) => {
+    const backendData = {
+      name: updatedDriver.name,
+      licenseNumber: updatedDriver.licenseNumber,
+      licenseCategory: updatedDriver.licenseCategory || 'Class A',
+      licenseExpiryDate: updatedDriver.licenseExpiry,
+      contactNumber: updatedDriver.phone,
+      safetyScore: Number(updatedDriver.safetyScore) || 5.0,
+      status: mapDriverStatusToBackend(updatedDriver.status)
+    };
+    const res = await api.put(`/drivers/${updatedDriver.id}`, backendData);
+    const mapped = mapDriverFromBackend(res.data);
+    setDrivers(prev => prev.map(d => d.id === updatedDriver.id ? mapped : d));
   };
 
-  const deleteDriver = (id) => {
-    const activeTrip = trips.some(t => t.driverId === id && t.status === 'Dispatched');
-    if (activeTrip) {
-      throw new Error(`Cannot delete driver. They are currently active on a dispatched trip.`);
-    }
+  const deleteDriver = async (id) => {
+    await api.delete(`/drivers/${id}`);
     setDrivers(prev => prev.filter(d => d.id !== id));
   };
 
   // --- TRIP ACTIONS ---
-  const createTrip = (trip) => {
-    const vehicle = vehicles.find(v => v.id === trip.vehicleId);
-    if (!vehicle) throw new Error('Vehicle not found.');
-    if (vehicle.status !== 'Available') {
-      throw new Error(`Vehicle is not available. Current status: ${vehicle.status}`);
-    }
-
-    const driver = drivers.find(d => d.id === trip.driverId);
-    if (!driver) throw new Error('Driver not found.');
-    if (driver.status !== 'Available') {
-      throw new Error(`Driver is not available. Current status: ${driver.status}`);
-    }
-
-    const today = new Date();
-    if (new Date(driver.licenseExpiry) < today) {
-      throw new Error('Cannot assign driver. Driving license has expired.');
-    }
-
-    const weight = Number(trip.cargoWeight);
-    if (weight > vehicle.capacity) {
-      throw new Error(`Cargo weight (${weight} kg) exceeds vehicle capacity (${vehicle.capacity} kg).`);
-    }
-
-    const newTrip = {
-      id: `T-${Date.now().toString().slice(-3)}`,
-      tripId: `TRP-${Date.now().toString().slice(-4)}`,
-      vehicleId: trip.vehicleId,
-      driverId: trip.driverId,
-      origin: trip.origin,
+  const createTrip = async (trip) => {
+    const backendData = {
+      source: trip.origin,
       destination: trip.destination,
-      cargoWeight: weight,
-      status: trip.status || 'Draft',
-      startDate: trip.status === 'Dispatched' ? new Date().toISOString().split('T')[0] : '',
-      endDate: '',
-      cost: Number(trip.cost) || 0
+      vehicleId: Number(trip.vehicleId),
+      driverId: Number(trip.driverId),
+      cargoWeight: Number(trip.cargoWeight),
+      plannedDistance: Number(trip.cost) / 50 || 120
     };
+    const res = await api.post('/trips', backendData);
+    const mapped = mapTripFromBackend(res.data);
+    setTrips(prev => [...prev, mapped]);
 
-    setTrips(prev => [...prev, newTrip]);
-
-    if (newTrip.status === 'Dispatched') {
-      // Automatically lock vehicle and driver
-      setVehicles(prev => prev.map(v => v.id === trip.vehicleId ? { ...v, status: 'Dispatched' } : v));
-      setDrivers(prev => prev.map(d => d.id === trip.driverId ? { ...d, status: 'Active' } : d));
+    if (trip.status === 'Dispatched') {
+      await updateTripStatus(mapped.id, 'Dispatched');
     }
-
-    return newTrip;
+    return mapped;
   };
 
-  const updateTripStatus = (tripId, status) => {
-    setTrips(prev => prev.map(t => {
-      if (t.id !== tripId) return t;
-
-      const oldStatus = t.status;
-      const vehicleId = t.vehicleId;
-      const driverId = t.driverId;
-
-      let startDate = t.startDate;
-      let endDate = t.endDate;
-
-      if (status === 'Dispatched' && oldStatus !== 'Dispatched') {
-        startDate = new Date().toISOString().split('T')[0];
-        setVehicles(vPrev => vPrev.map(v => v.id === vehicleId ? { ...v, status: 'Dispatched' } : v));
-        setDrivers(dPrev => dPrev.map(d => d.id === driverId ? { ...d, status: 'Active' } : d));
-      } else if (status === 'Completed' && oldStatus !== 'Completed') {
-        endDate = new Date().toISOString().split('T')[0];
-        setVehicles(vPrev => vPrev.map(v => v.id === vehicleId ? { ...v, status: 'Available' } : v));
-        setDrivers(dPrev => dPrev.map(d => d.id === driverId ? { ...d, status: 'Available' } : d));
-      } else if (status === 'Cancelled' && oldStatus === 'Dispatched') {
-        setVehicles(vPrev => vPrev.map(v => v.id === vehicleId ? { ...v, status: 'Available' } : v));
-        setDrivers(dPrev => dPrev.map(d => d.id === driverId ? { ...d, status: 'Available' } : d));
-      }
-
-      return {
-        ...t,
-        status,
-        startDate,
-        endDate
+  const updateTripStatus = async (tripId, status, details = {}) => {
+    let res;
+    if (status === 'Dispatched') {
+      res = await api.put(`/trips/${tripId}/dispatch`);
+    } else if (status === 'Completed') {
+      const backendData = {
+        finalOdometer: Number(details.finalOdometer) || 0,
+        fuelConsumed: Number(details.fuelConsumed) || 0,
+        fuelCost: details.fuelCost ? Number(details.fuelCost) : null
       };
-    }));
+      res = await api.put(`/trips/${tripId}/complete`, backendData);
+    } else if (status === 'Cancelled') {
+      res = await api.put(`/trips/${tripId}/cancel`);
+    }
+
+    if (res) {
+      await fetchAllData();
+    }
   };
 
   // --- MAINTENANCE ACTIONS ---
-  const createMaintenanceRecord = (record) => {
-    const vehicle = vehicles.find(v => v.id === record.vehicleId);
-    if (!vehicle) throw new Error('Vehicle not found.');
-    if (vehicle.status === 'Dispatched') {
-      throw new Error('Cannot put vehicle in maintenance. It is active on an ongoing trip.');
-    }
-
-    const newRecord = {
-      id: `M-${Date.now().toString().slice(-3)}`,
-      vehicleId: record.vehicleId,
-      serviceType: record.serviceType,
-      cost: Number(record.cost),
-      startDate: record.startDate || new Date().toISOString().split('T')[0],
-      endDate: '',
-      status: 'In Progress'
+  const createMaintenanceRecord = async (record) => {
+    const backendData = {
+      vehicleId: Number(record.vehicleId),
+      description: record.serviceType,
+      cost: Number(record.cost)
     };
+    const res = await api.post('/maintenance', backendData);
+    const mapped = mapMaintenanceFromBackend(res.data);
+    setMaintenance(prev => [...prev, mapped]);
 
-    setMaintenance(prev => [...prev, newRecord]);
-
-    // Automatically set vehicle to "In Shop"
-    setVehicles(prev => prev.map(v => v.id === record.vehicleId ? { ...v, status: 'In Shop' } : v));
-    return newRecord;
+    // Re-fetch vehicles to synchronize status update to 'In Shop'
+    const vehiclesRes = await api.get('/vehicles');
+    setVehicles(vehiclesRes.data.map(mapVehicleFromBackend));
+    return mapped;
   };
 
-  const completeMaintenanceRecord = (id, endDate) => {
-    setMaintenance(prev => prev.map(m => {
-      if (m.id !== id) return m;
+  const completeMaintenanceRecord = async (id, endDate) => {
+    const res = await api.put(`/maintenance/${id}/complete`);
+    const mapped = mapMaintenanceFromBackend(res.data);
+    setMaintenance(prev => prev.map(m => m.id === id ? mapped : m));
 
-      const finishDate = endDate || new Date().toISOString().split('T')[0];
-      // Restore vehicle to Available
-      setVehicles(vPrev => vPrev.map(v => v.id === m.vehicleId ? { ...v, status: 'Available', lastServiceDate: finishDate } : v));
-
-      return {
-        ...m,
-        status: 'Completed',
-        endDate: finishDate
-      };
-    }));
+    // Re-fetch vehicles to synchronize status update to 'Available'
+    const vehiclesRes = await api.get('/vehicles');
+    setVehicles(vehiclesRes.data.map(mapVehicleFromBackend));
   };
 
-  // --- FUEL & EXPENSE ACTIONS ---
+  // --- LOCAL MUTATIONS FOR FUEL/EXPENSES ---
   const addFuelLog = (log) => {
     const newLog = {
       ...log,
@@ -344,17 +329,17 @@ export const ERPProvider = ({ children }) => {
     return newExpense;
   };
 
-  // --- UTILS & CALCULATORS ---
   const getVehicleOperationalCost = (vehicleId) => {
-    const fuelCost = fuelLogs.filter(f => f.vehicleId === vehicleId).reduce((sum, f) => sum + f.cost, 0);
-    const serviceCost = maintenance.filter(m => m.vehicleId === vehicleId).reduce((sum, m) => sum + m.cost, 0);
-    const miscCost = expenses.filter(e => e.vehicleId === vehicleId).reduce((sum, e) => sum + e.amount, 0);
+    const numId = Number(vehicleId);
+    const fuelCost = fuelLogs.filter(f => Number(f.vehicleId) === numId).reduce((sum, f) => sum + f.cost, 0);
+    const serviceCost = maintenance.filter(m => Number(m.vehicleId) === numId).reduce((sum, m) => sum + m.cost, 0);
+    const miscCost = expenses.filter(e => Number(e.vehicleId) === numId).reduce((sum, e) => sum + e.amount, 0);
     return fuelCost + serviceCost + miscCost;
   };
 
   const getVehicleRevenue = (vehicleId) => {
-    // We assume completed trips earn revenue equal to their cost + a mock profit margin (e.g. 1.5 * trip cost)
-    return trips.filter(t => t.vehicleId === vehicleId && t.status === 'Completed').reduce((sum, t) => sum + (t.cost * 1.4), 0);
+    const numId = Number(vehicleId);
+    return trips.filter(t => Number(t.vehicleId) === numId && t.status === 'Completed').reduce((sum, t) => sum + (t.cost * 1.4), 0);
   };
 
   return (
@@ -366,6 +351,9 @@ export const ERPProvider = ({ children }) => {
         maintenance,
         fuelLogs,
         expenses,
+        loading,
+        error,
+        refreshData: fetchAllData,
         addVehicle,
         editVehicle,
         deleteVehicle,
