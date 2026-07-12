@@ -84,27 +84,28 @@ const TripManagement = () => {
     <>
       <style>{`
         .glass-card {
-            background: rgba(30, 30, 30, 0.6);
+            background: var(--bg-card);
             backdrop-filter: blur(12px);
-            border: 1px solid #2E2E2E;
+            border: 1px solid var(--border-color);
+            transition: all 250ms ease;
         }
         .form-input {
-            background-color: #161616;
-            border: 1px solid #2E2E2E;
-            color: #e6e1e2;
+            background-color: var(--bg-app);
+            border: 1px solid var(--border-color);
+            color: var(--color-text-primary);
             width: 100%;
             height: 40px;
             padding: 0 12px;
             border-radius: 6px;
             outline: none;
-            transition: border-color 0.2s;
+            transition: all 250ms ease;
         }
         .form-input:focus {
             border-color: #ff8a00;
         }
       `}</style>
 
-      <main className="ml-[260px] min-h-screen flex flex-col bg-[#111111] text-[#e6e1e2]">
+      <main className="ml-[260px] min-h-screen flex flex-col bg-[var(--bg-app)] text-[var(--color-text-secondary)] transition-all duration-200">
         <Header 
           title="Dispatch Board" 
           subtitle="Deploy fleet assets, assign crew, and monitor active lines"
@@ -116,8 +117,8 @@ const TripManagement = () => {
         <div className="p-6 flex flex-col xl:flex-row gap-6 flex-grow">
           {/* LEFT: Dispatch Form */}
           <div className="xl:w-1/3 space-y-6">
-            <div className="glass-card p-6 rounded-xl border border-[#2E2E2E]">
-              <h3 className="text-base font-bold mb-6 pb-2 border-b border-[#2E2E2E] flex items-center gap-2">
+            <div className="glass-card p-6 rounded-xl border border-[var(--border-color)]">
+              <h3 className="text-base font-bold mb-6 pb-2 border-b border-[var(--border-color)] flex items-center gap-2 text-[var(--color-text-primary)]">
                 <span className="material-symbols-outlined text-[#ff8a00]">edit_document</span>
                 New Trip Dispatcher
               </h3>
@@ -243,21 +244,21 @@ const TripManagement = () => {
 
           {/* RIGHT: Trip Roster */}
           <div className="flex-grow space-y-4">
-            <div className="glass-card p-6 rounded-xl border border-[#2E2E2E] flex flex-col h-full">
-              <h3 className="text-base font-bold mb-4 pb-2 border-b border-[#2E2E2E] flex items-center gap-2">
+            <div className="glass-card p-6 rounded-xl border border-[var(--border-color)] flex flex-col h-full">
+              <h3 className="text-base font-bold mb-4 pb-2 border-b border-[var(--border-color)] flex items-center gap-2 text-[var(--color-text-primary)]">
                 <span className="material-symbols-outlined text-[#ff8a00]">list_alt</span>
                 Dispatched Routes & Manifests
               </h3>
 
               <div className="space-y-4 overflow-y-auto max-h-[600px] pr-2">
                 {filteredTrips.length === 0 ? (
-                  <p className="text-center py-12 text-on-surface-variant/40">No dispatch manifests logged.</p>
+                  <p className="text-center py-12 text-[var(--color-text-muted)]">No dispatch manifests logged.</p>
                 ) : (
                   filteredTrips.map(trip => {
                     const vehicle = getVehicleInfo(trip.vehicleId);
                     const driver = getDriverInfo(trip.driverId);
                     return (
-                      <div key={trip.id} className="bg-[#1A1A1A]/70 border border-[#2E2E2E] p-4 rounded-lg flex flex-col sm:flex-row justify-between gap-4">
+                      <div key={trip.id} className="bg-[var(--bg-app)] border border-[var(--border-color)] p-4 rounded-lg flex flex-col sm:flex-row justify-between gap-4">
                         <div className="space-y-2">
                           <div className="flex items-center gap-3">
                             <span className="text-xs font-mono font-bold text-primary">{trip.tripId}</span>

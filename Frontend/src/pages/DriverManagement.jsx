@@ -161,34 +161,35 @@ const DriverManagement = () => {
     <>
       <style>{`
         .glass-card {
-            background: rgba(30, 30, 30, 0.6);
+            background: var(--bg-card);
             backdrop-filter: blur(12px);
-            border: 1px solid #2E2E2E;
+            border: 1px solid var(--border-color);
+            transition: all 250ms ease;
         }
         .form-input {
-            background-color: #161616;
-            border: 1px solid #2E2E2E;
-            color: #e6e1e2;
+            background-color: var(--bg-app);
+            border: 1px solid var(--border-color);
+            color: var(--color-text-primary);
             width: 100%;
             height: 40px;
             padding: 0 12px;
             border-radius: 6px;
             outline: none;
-            transition: border-color 0.2s;
+            transition: all 250ms ease;
         }
         .form-input:focus {
             border-color: #ff8a00;
         }
         .table-row {
-          border-bottom: 1px solid #2E2E2E;
+          border-bottom: 1px solid var(--border-color);
           transition: background 0.2s;
         }
         .table-row:hover {
-          background-color: rgba(255, 255, 255, 0.02);
+          background-color: var(--bg-app);
         }
       `}</style>
 
-      <main className="ml-[260px] min-h-screen flex flex-col bg-[#111111] text-[#e6e1e2]">
+      <main className="ml-[260px] min-h-screen flex flex-col bg-[var(--bg-app)] text-[var(--color-text-secondary)] transition-all duration-200">
         <Header 
           title="Drivers & Safety Profiles" 
           subtitle="Manage operator licensing, safety clearance, and deployment logs"
@@ -219,11 +220,11 @@ const DriverManagement = () => {
             </div>
 
             {/* Drivers Table matching Blueprint */}
-            <div className="glass-card rounded-xl border border-[#2E2E2E] overflow-hidden">
+            <div className="glass-card rounded-xl border border-[var(--border-color)] overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="border-b border-[#2E2E2E] text-on-surface-variant/60 font-bold uppercase tracking-wider bg-white/[0.01]">
+                    <tr className="border-b border-[var(--border-color)] text-[var(--color-text-muted)] font-bold uppercase tracking-wider bg-white/[0.01]">
                       <th className="py-4 px-6">Driver</th>
                       <th className="py-4 px-6">License No.</th>
                       <th className="py-4 px-6">Category</th>
@@ -496,11 +497,11 @@ const DriverManagement = () => {
                     <option value="Off Duty">Off Duty</option>
                   </select>
                 </div>
-                <div className="flex gap-3 justify-end pt-4 border-t border-[#2E2E2E] mt-4">
+                <div className="flex gap-3 justify-end pt-4 border-t border-[var(--border-color)] mt-4">
                   <button
                     type="button"
                     onClick={() => setShowAddModal(false)}
-                    className="px-4 py-2 bg-transparent text-on-surface-variant hover:text-white font-semibold rounded cursor-pointer"
+                    className="px-4 py-2 bg-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] font-semibold rounded cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -519,8 +520,8 @@ const DriverManagement = () => {
         {/* EDIT DRIVER MODAL */}
         {showEditModal && currentDriver && (
           <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-            <div className="glass-card w-full max-w-md rounded-xl p-6 relative border border-white/10 shadow-2xl">
-              <h3 className="text-base font-bold border-b border-[#2E2E2E] pb-3 mb-4 flex items-center gap-2">
+            <div className="glass-card w-full max-w-md rounded-xl p-6 relative border border-[var(--border-color)] shadow-2xl">
+              <h3 className="text-base font-bold border-b border-[var(--border-color)] pb-3 mb-4 flex items-center gap-2 text-[var(--color-text-primary)]">
                 <span className="material-symbols-outlined text-[#ff8a00]">edit</span>
                 Modify Driver Profile
               </h3>
@@ -622,11 +623,11 @@ const DriverManagement = () => {
                     <option value="Off Duty">Off Duty</option>
                   </select>
                 </div>
-                <div className="flex gap-3 justify-end pt-4 border-t border-[#2E2E2E] mt-4">
+                <div className="flex gap-3 justify-end pt-4 border-t border-[var(--border-color)] mt-4">
                   <button
                     type="button"
                     onClick={() => setShowEditModal(false)}
-                    className="px-4 py-2 bg-transparent text-on-surface-variant hover:text-white font-semibold rounded cursor-pointer"
+                    className="px-4 py-2 bg-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] font-semibold rounded cursor-pointer"
                   >
                     Cancel
                   </button>

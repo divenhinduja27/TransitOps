@@ -92,27 +92,28 @@ const VehicleRegistry = () => {
     <>
       <style>{`
         .glass-panel {
-            background: rgba(30, 30, 30, 0.6);
+            background: var(--bg-card);
             backdrop-filter: blur(12px);
-            border: 1px solid #2E2E2E;
+            border: 1px solid var(--border-color);
+            transition: all 250ms ease;
         }
         .form-input {
-            background-color: #161616;
-            border: 1px solid #2E2E2E;
-            color: #e6e1e2;
+            background-color: var(--bg-app);
+            border: 1px solid var(--border-color);
+            color: var(--color-text-primary);
             width: 100%;
             height: 40px;
             padding: 0 12px;
             border-radius: 6px;
             outline: none;
-            transition: border-color 0.2s;
+            transition: all 250ms ease;
         }
         .form-input:focus {
             border-color: #ff8a00;
         }
       `}</style>
 
-      <main className="ml-[260px] min-h-screen flex flex-col bg-[#111111] text-[#e6e1e2]">
+      <main className="ml-[260px] min-h-screen flex flex-col bg-[var(--bg-app)] text-[var(--color-text-secondary)] transition-all duration-200">
         <Header 
           title="Vehicle Registry" 
           subtitle="Manage enterprise fleet assets"
@@ -132,9 +133,9 @@ const VehicleRegistry = () => {
 
         <div className="p-6 space-y-6 flex-grow">
           {/* Controls Bar */}
-          <div className="flex justify-between items-center bg-[#1A1A1A]/40 border border-[#2E2E2E] p-4 rounded-xl">
+          <div className="flex justify-between items-center bg-[var(--bg-card)] border border-[var(--border-color)] p-4 rounded-xl">
             <div className="flex items-center gap-4">
-              <span className="text-xs text-on-surface-variant font-bold uppercase">Status Filter:</span>
+              <span className="text-xs text-[var(--color-text-muted)] font-bold uppercase">Status Filter:</span>
               <div className="flex gap-2">
                 {['All', 'Available', 'Dispatched', 'In Shop'].map(status => (
                   <button
@@ -142,8 +143,8 @@ const VehicleRegistry = () => {
                     onClick={() => setStatusFilter(status)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                       statusFilter === status 
-                        ? 'bg-secondary-container text-on-secondary-container' 
-                        : 'bg-[#1E1E1E] text-on-surface-variant hover:bg-[#2E2E2E]'
+                        ? 'bg-[#ff8a00]/15 text-[#ff8a00] border border-[#ff8a00]/30' 
+                        : 'bg-[var(--bg-app)] text-[var(--color-text-muted)] hover:bg-[var(--bg-card)] border border-[var(--border-color)]'
                     }`}
                   >
                     {status}
@@ -151,7 +152,7 @@ const VehicleRegistry = () => {
                 ))}
               </div>
             </div>
-            <div className="text-xs text-on-surface-variant font-semibold">
+            <div className="text-xs text-[var(--color-text-muted)] font-semibold">
               Showing {filteredVehicles.length} of {vehicles.length} assets
             </div>
           </div>
@@ -161,7 +162,7 @@ const VehicleRegistry = () => {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="border-b border-[#2E2E2E] text-on-surface-variant/60 text-xs font-bold uppercase bg-[#161616]/40">
+                  <tr className="border-b border-[var(--border-color)] text-[var(--color-text-muted)] text-xs font-bold uppercase bg-[var(--bg-app)]/40">
                     <th className="py-4 px-4">Registration</th>
                     <th className="py-4 px-4">Manufacturer & Model</th>
                     <th className="py-4 px-4">Type</th>
@@ -171,7 +172,7 @@ const VehicleRegistry = () => {
                     <th className="py-4 px-4 text-center">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#2E2E2E]/40">
+                <tbody className="divide-y divide-[var(--border-color)]/40">
                   {filteredVehicles.length === 0 ? (
                     <tr>
                       <td colSpan="7" className="py-12 text-center text-on-surface-variant/40">

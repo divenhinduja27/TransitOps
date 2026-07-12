@@ -43,27 +43,28 @@ const Settings = () => {
     <>
       <style>{`
         .glass-card {
-            background: rgba(30, 30, 30, 0.6);
+            background: var(--bg-card);
             backdrop-filter: blur(12px);
-            border: 1px solid #2E2E2E;
+            border: 1px solid var(--border-color);
+            transition: all 250ms ease;
         }
         .form-input {
-            background-color: #161616;
-            border: 1px solid #2E2E2E;
-            color: #e6e1e2;
+            background-color: var(--bg-app);
+            border: 1px solid var(--border-color);
+            color: var(--color-text-primary);
             width: 100%;
             height: 40px;
             padding: 0 12px;
             border-radius: 6px;
             outline: none;
-            transition: border-color 0.2s;
+            transition: all 250ms ease;
         }
         .form-input:focus {
             border-color: #ff8a00;
         }
       `}</style>
 
-      <main className="ml-[260px] min-h-screen flex flex-col bg-[#111111] text-[#e6e1e2]">
+      <main className="ml-[260px] min-h-screen flex flex-col bg-[var(--bg-app)] text-[var(--color-text-secondary)] transition-all duration-200">
         <Header 
           title="Command Settings" 
           subtitle="Configure system permissions, alerts protocols, and regional depots"
@@ -82,17 +83,17 @@ const Settings = () => {
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             {/* RBAC Table */}
-            <div className="glass-card p-6 rounded-xl border border-[#2E2E2E] space-y-4">
-              <h3 className="text-base font-bold border-b border-[#2E2E2E] pb-3 flex items-center gap-2">
+            <div className="glass-card p-6 rounded-xl border border-[var(--border-color)] space-y-4">
+              <h3 className="text-base font-bold border-b border-[var(--border-color)] pb-3 flex items-center gap-2 text-[var(--color-text-primary)]">
                 <span className="material-symbols-outlined text-[#ff8a00]">admin_panel_settings</span>
                 Role-Based Access Control (RBAC)
               </h3>
-              <p className="text-xs text-on-surface-variant/80">Configure authorization policy parameters across operational groups.</p>
+              <p className="text-xs text-[var(--color-text-muted)]">Configure authorization policy parameters across operational groups.</p>
               
               <div className="overflow-x-auto pt-2">
                 <table className="w-full text-left text-sm">
                   <thead>
-                    <tr className="border-b border-[#2E2E2E] text-on-surface-variant/60 text-xs font-bold uppercase">
+                    <tr className="border-b border-[var(--border-color)] text-[var(--color-text-muted)] text-xs font-bold uppercase">
                       <th className="py-2 px-1">Role</th>
                       <th className="py-2 text-center">Read</th>
                       <th className="py-2 text-center">Write</th>
@@ -100,16 +101,16 @@ const Settings = () => {
                       <th className="py-2 text-center">Dispatch</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#2E2E2E]/40">
+                  <tbody className="divide-y divide-[var(--border-color)]/40 text-[var(--color-text-secondary)]">
                     {permissions.map((p, idx) => (
-                      <tr key={p.role} className="hover:bg-[#1E1E1E]/40 transition-colors">
+                      <tr key={p.role} className="hover:bg-[var(--bg-app)] transition-colors">
                         <td className="py-3 px-1 font-semibold">{p.role}</td>
                         <td className="py-3 text-center">
                           <input 
                             type="checkbox" 
                             checked={p.read} 
                             onChange={() => handleTogglePermission(idx, 'read')}
-                            className="w-4 h-4 rounded border-[#2E2E2E] bg-[#161616] text-[#ff8a00] focus:ring-0" 
+                            className="w-4 h-4 rounded border-[var(--border-color)] bg-[var(--bg-app)] text-[#ff8a00] focus:ring-0" 
                           />
                         </td>
                         <td className="py-3 text-center">
@@ -117,7 +118,7 @@ const Settings = () => {
                             type="checkbox" 
                             checked={p.write} 
                             onChange={() => handleTogglePermission(idx, 'write')}
-                            className="w-4 h-4 rounded border-[#2E2E2E] bg-[#161616] text-[#ff8a00] focus:ring-0" 
+                            className="w-4 h-4 rounded border-[var(--border-color)] bg-[var(--bg-app)] text-[#ff8a00] focus:ring-0" 
                           />
                         </td>
                         <td className="py-3 text-center">
@@ -126,7 +127,7 @@ const Settings = () => {
                             checked={p.delete} 
                             disabled={p.role === 'Administrator'}
                             onChange={() => handleTogglePermission(idx, 'delete')}
-                            className="w-4 h-4 rounded border-[#2E2E2E] bg-[#161616] text-[#ff8a00] focus:ring-0 disabled:opacity-30" 
+                            className="w-4 h-4 rounded border-[var(--border-color)] bg-[var(--bg-app)] text-[#ff8a00] focus:ring-0 disabled:opacity-30" 
                           />
                         </td>
                         <td className="py-3 text-center">
@@ -134,7 +135,7 @@ const Settings = () => {
                             type="checkbox" 
                             checked={p.dispatch} 
                             onChange={() => handleTogglePermission(idx, 'dispatch')}
-                            className="w-4 h-4 rounded border-[#2E2E2E] bg-[#161616] text-[#ff8a00] focus:ring-0" 
+                            className="w-4 h-4 rounded border-[var(--border-color)] bg-[var(--bg-app)] text-[#ff8a00] focus:ring-0" 
                           />
                         </td>
                       </tr>
@@ -144,16 +145,15 @@ const Settings = () => {
               </div>
             </div>
 
-            {/* Department Settings */}
-            <div className="glass-card p-6 rounded-xl border border-[#2E2E2E] space-y-4">
-              <h3 className="text-base font-bold border-b border-[#2E2E2E] pb-3 flex items-center gap-2">
+            <div className="glass-card p-6 rounded-xl border border-[var(--border-color)] space-y-4">
+              <h3 className="text-base font-bold border-b border-[var(--border-color)] pb-3 flex items-center gap-2 text-[var(--color-text-primary)]">
                 <span className="material-symbols-outlined text-[#ff8a00]">business</span>
                 Department & Regional Node Settings
               </h3>
               
               <div className="space-y-4 pt-2">
                 <div className="space-y-1">
-                  <label className="text-xs text-on-surface-variant font-bold uppercase">Dispatch Hub Name</label>
+                  <label className="text-xs text-[var(--color-text-muted)] font-bold uppercase">Dispatch Hub Name</label>
                   <input
                     className="form-input"
                     type="text"
@@ -165,9 +165,9 @@ const Settings = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs text-on-surface-variant font-bold uppercase">Primary Timezone</label>
+                    <label className="text-xs text-[var(--color-text-muted)] font-bold uppercase">Primary Timezone</label>
                     <select
-                      className="form-input bg-[#161616]"
+                      className="form-input bg-[var(--bg-app)]"
                       value={departments.primaryTimezone}
                       onChange={(e) => setDepartments({ ...departments, primaryTimezone: e.target.value })}
                     >
@@ -177,7 +177,7 @@ const Settings = () => {
                     </select>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs text-on-surface-variant font-bold uppercase">Max Shift Length (hours)</label>
+                    <label className="text-xs text-[var(--color-text-muted)] font-bold uppercase">Max Shift Length (hours)</label>
                     <input
                       className="form-input"
                       type="number"
@@ -194,9 +194,9 @@ const Settings = () => {
                     type="checkbox"
                     checked={departments.enableAutoRerouting}
                     onChange={(e) => setDepartments({ ...departments, enableAutoRerouting: e.target.checked })}
-                    className="w-4 h-4 rounded border-[#2E2E2E] bg-[#161616] text-[#ff8a00] focus:ring-0"
+                    className="w-4 h-4 rounded border-[var(--border-color)] bg-[var(--bg-app)] text-[#ff8a00] focus:ring-0"
                   />
-                  <label htmlFor="autoReroute" className="text-xs text-on-surface select-none">
+                  <label htmlFor="autoReroute" className="text-xs text-[var(--color-text-secondary)] select-none">
                     Enable Autonomous Emergency Rerouting Protocols
                   </label>
                 </div>
@@ -204,74 +204,74 @@ const Settings = () => {
             </div>
 
             {/* Notification settings */}
-            <div className="glass-card p-6 rounded-xl border border-[#2E2E2E] space-y-4">
-              <h3 className="text-base font-bold border-b border-[#2E2E2E] pb-3 flex items-center gap-2">
+            <div className="glass-card p-6 rounded-xl border border-[var(--border-color)] space-y-4">
+              <h3 className="text-base font-bold border-b border-[var(--border-color)] pb-3 flex items-center gap-2 text-[var(--color-text-primary)]">
                 <span className="material-symbols-outlined text-[#ff8a00]">notifications_active</span>
                 Automated Alert Summaries & Notifications
               </h3>
-              <p className="text-xs text-on-surface-variant/80">Configure alert routing logic for dispatch pipelines.</p>
+              <p className="text-xs text-[var(--color-text-muted)]">Configure alert routing logic for dispatch pipelines.</p>
 
               <div className="space-y-4 pt-2">
                 <div className="flex items-center justify-between">
                   <div>
-                    <label className="text-sm font-semibold text-on-surface">SMS Critical Alerts</label>
-                    <p className="text-[10px] text-on-surface-variant/80">Ping dispatch operators on driver license expiry/suspension.</p>
+                    <label className="text-sm font-semibold text-[var(--color-text-primary)]">SMS Critical Alerts</label>
+                    <p className="text-[10px] text-[var(--color-text-muted)]">Ping dispatch operators on driver license expiry/suspension.</p>
                   </div>
                   <input
                     type="checkbox"
                     checked={notifications.smsAlerts}
                     onChange={(e) => setNotifications({ ...notifications, smsAlerts: e.target.checked })}
-                    className="w-4 h-4 rounded border-[#2E2E2E] bg-[#161616] text-[#ff8a00] focus:ring-0"
+                    className="w-4 h-4 rounded border-[var(--border-color)] bg-[var(--bg-app)] text-[#ff8a00] focus:ring-0"
                   />
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <label className="text-sm font-semibold text-on-surface">Email Summaries</label>
-                    <p className="text-[10px] text-on-surface-variant/80">Send daily fuel opex and maintenance status logs.</p>
+                    <label className="text-sm font-semibold text-[var(--color-text-primary)]">Email Summaries</label>
+                    <p className="text-[10px] text-[var(--color-text-muted)]">Send daily fuel opex and maintenance status logs.</p>
                   </div>
                   <input
                     type="checkbox"
                     checked={notifications.emailSummaries}
                     onChange={(e) => setNotifications({ ...notifications, emailSummaries: e.target.checked })}
-                    className="w-4 h-4 rounded border-[#2E2E2E] bg-[#161616] text-[#ff8a00] focus:ring-0"
+                    className="w-4 h-4 rounded border-[var(--border-color)] bg-[var(--bg-app)] text-[#ff8a00] focus:ring-0"
                   />
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <label className="text-sm font-semibold text-on-surface">Maintenance Alarms</label>
-                    <p className="text-[10px] text-on-surface-variant/80">Flag vehicles that exceed 30 days without safety inspections.</p>
+                    <label className="text-sm font-semibold text-[var(--color-text-primary)]">Maintenance Alarms</label>
+                    <p className="text-[10px] text-[var(--color-text-muted)]">Flag vehicles that exceed 30 days without safety inspections.</p>
                   </div>
                   <input
                     type="checkbox"
                     checked={notifications.maintenanceAlarms}
                     onChange={(e) => setNotifications({ ...notifications, maintenanceAlarms: e.target.checked })}
-                    className="w-4 h-4 rounded border-[#2E2E2E] bg-[#161616] text-[#ff8a00] focus:ring-0"
+                    className="w-4 h-4 rounded border-[var(--border-color)] bg-[var(--bg-app)] text-[#ff8a00] focus:ring-0"
                   />
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <label className="text-sm font-semibold text-on-surface">Real-time Trip Updates</label>
-                    <p className="text-[10px] text-on-surface-variant/80">Push web notification when a route changes phase.</p>
+                    <label className="text-sm font-semibold text-[var(--color-text-primary)]">Real-time Trip Updates</label>
+                    <p className="text-[10px] text-[var(--color-text-muted)]">Push web notification when a route changes phase.</p>
                   </div>
                   <input
                     type="checkbox"
                     checked={notifications.tripUpdates}
                     onChange={(e) => setNotifications({ ...notifications, tripUpdates: e.target.checked })}
-                    className="w-4 h-4 rounded border-[#2E2E2E] bg-[#161616] text-[#ff8a00] focus:ring-0"
+                    className="w-4 h-4 rounded border-[var(--border-color)] bg-[var(--bg-app)] text-[#ff8a00] focus:ring-0"
                   />
                 </div>
               </div>
             </div>
             
             {/* Save Options */}
-            <div className="glass-card p-6 rounded-xl border border-[#2E2E2E] flex flex-col justify-center items-center text-center space-y-4">
+            <div className="glass-card p-6 rounded-xl border border-[var(--border-color)] flex flex-col justify-center items-center text-center space-y-4">
               <span className="material-symbols-outlined text-[48px] text-[#ff8a00] animate-pulse">settings</span>
               <div>
-                <h4 className="font-bold text-sm">Save Console Settings</h4>
-                <p className="text-xs text-on-surface-variant/80 max-w-xs mt-1">
+                <h4 className="font-bold text-sm text-[var(--color-text-primary)]">Save Console Settings</h4>
+                <p className="text-xs text-[var(--color-text-muted)] max-w-xs mt-1">
                   Commit and deploy system changes across the local and remote logistics dispatch network.
                 </p>
               </div>

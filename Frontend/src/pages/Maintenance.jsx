@@ -69,34 +69,35 @@ const Maintenance = () => {
     <>
       <style>{`
         .glass-card {
-            background: rgba(30, 30, 30, 0.6);
+            background: var(--bg-card);
             backdrop-filter: blur(12px);
-            border: 1px solid #2E2E2E;
+            border: 1px solid var(--border-color);
+            transition: all 250ms ease;
         }
         .form-input {
-            background-color: #161616;
-            border: 1px solid #2E2E2E;
-            color: #e6e1e2;
+            background-color: var(--bg-app);
+            border: 1px solid var(--border-color);
+            color: var(--color-text-primary);
             width: 100%;
             height: 40px;
             padding: 0 12px;
             border-radius: 6px;
             outline: none;
-            transition: border-color 0.2s;
+            transition: all 250ms ease;
         }
         .form-input:focus {
             border-color: #ff8a00;
         }
         .table-row {
-          border-bottom: 1px solid #2E2E2E;
+          border-bottom: 1px solid var(--border-color);
           transition: background 0.2s;
         }
         .table-row:hover {
-          background-color: rgba(255, 255, 255, 0.02);
+          background-color: var(--bg-app);
         }
       `}</style>
 
-      <main className="ml-[260px] min-h-screen flex flex-col bg-[#111111] text-[#e6e1e2]">
+      <main className="ml-[260px] min-h-screen flex flex-col bg-[var(--bg-app)] text-[var(--color-text-secondary)] transition-all duration-200">
         <Header 
           title="Maintenance Depot" 
           subtitle="Record vehicle maintenance logs and monitor active shop tickets"
@@ -108,8 +109,8 @@ const Maintenance = () => {
         <div className="p-6 flex flex-col xl:flex-row gap-6 flex-grow">
           {/* LEFT: Log Service Record Form */}
           <div className="xl:w-1/3 space-y-6">
-            <div className="glass-card p-6 rounded-xl border border-[#2E2E2E]">
-              <h3 className="text-base font-bold mb-6 pb-2 border-b border-[#2E2E2E] flex items-center gap-2">
+            <div className="glass-card p-6 rounded-xl border border-[var(--border-color)]">
+              <h3 className="text-base font-bold mb-6 pb-2 border-b border-[var(--border-color)] flex items-center gap-2 text-[var(--color-text-primary)]">
                 <span className="material-symbols-outlined text-[#ff8a00]">build</span>
                 Log Service Record
               </h3>
@@ -211,8 +212,8 @@ const Maintenance = () => {
 
           {/* RIGHT: Service Log Table matching Blueprint */}
           <div className="flex-grow space-y-4">
-            <div className="glass-card p-6 rounded-xl border border-[#2E2E2E] flex flex-col h-full">
-              <h3 className="text-base font-bold mb-4 pb-2 border-b border-[#2E2E2E] flex items-center gap-2">
+            <div className="glass-card p-6 rounded-xl border border-[var(--border-color)] flex flex-col h-full">
+              <h3 className="text-base font-bold mb-4 pb-2 border-b border-[var(--border-color)] flex items-center gap-2 text-[var(--color-text-primary)]">
                 <span className="material-symbols-outlined text-[#ff8a00]">list_alt</span>
                 Service Logs
               </h3>
@@ -220,11 +221,11 @@ const Maintenance = () => {
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="border-b border-[#2E2E2E] text-zinc-400 font-bold uppercase tracking-wider bg-white/[0.01]">
-                      <th className="py-4 px-6 text-[10px] font-bold tracking-wider text-zinc-400">Vehicle</th>
-                      <th className="py-4 px-6 text-[10px] font-bold tracking-wider text-zinc-400">Service</th>
-                      <th className="py-4 px-6 text-[10px] font-bold tracking-wider text-zinc-400">Cost</th>
-                      <th className="py-4 px-6 text-[10px] font-bold tracking-wider text-zinc-400 text-right">Status</th>
+                    <tr className="border-b border-[var(--border-color)] text-[var(--color-text-muted)] font-bold uppercase tracking-wider bg-white/[0.01]">
+                      <th className="py-4 px-6 text-[10px] font-bold tracking-wider text-[var(--color-text-muted)]">Vehicle</th>
+                      <th className="py-4 px-6 text-[10px] font-bold tracking-wider text-[var(--color-text-muted)]">Service</th>
+                      <th className="py-4 px-6 text-[10px] font-bold tracking-wider text-[var(--color-text-muted)]">Cost</th>
+                      <th className="py-4 px-6 text-[10px] font-bold tracking-wider text-[var(--color-text-muted)] text-right">Status</th>
                     </tr>
                   </thead>
                   <tbody>

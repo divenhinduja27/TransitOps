@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useERP } from '../context/ERPContext';
 import Header from '../components/Header';
 import { Link } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
 
 // GPS Coordinate mapping for major logistics nodes
 const CITY_COORDS = {
@@ -18,7 +19,8 @@ const CITY_COORDS = {
 };
 
 const Dashboard = () => {
-  const { vehicles, drivers, trips, loading, error } = useERP();
+  const { vehicles, drivers, trips } = useERP();
+  const { theme } = useTheme();
   const [searchQuery, setSearchQuery] = useState('');
   
   // Dashboard Filters
@@ -196,7 +198,6 @@ const Dashboard = () => {
         trips.forEach(t => {
           if (t.status === 'Dispatched') {
             const current = next[t.id] || 0.1;
-            // Advance progress by 3% every 5 seconds, looping back to 0.1 once finished
             next[t.id] = current >= 0.95 ? 0.1 : current + 0.03;
           }
         });
@@ -228,8 +229,12 @@ const Dashboard = () => {
 
     window.L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    // Initial tile layer setup (Road theme)
-    window.L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    // Initial tile layer setup (Road theme based on current theme)
+    const initialUrl = theme === 'dark' 
+      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+      : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+
+    window.L.tileLayer(initialUrl, {
       attribution: '&copy; CartoDB'
     }).addTo(map);
 
@@ -243,7 +248,7 @@ const Dashboard = () => {
     };
   }, []);
 
-  // Update map base layer (Road vs Satellite view)
+  // Update map base layer (Road vs Satellite view, Road respects Dark/Light theme)
   useEffect(() => {
     const map = mapInstance.current;
     if (!map || !window.L) return;
@@ -255,7 +260,11 @@ const Dashboard = () => {
     });
 
     if (mapView === 'road') {
-      window.L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      const roadUrl = theme === 'dark' 
+        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+        : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+
+      window.L.tileLayer(roadUrl, {
         attribution: '&copy; CartoDB'
       }).addTo(map);
     } else {
@@ -263,7 +272,7 @@ const Dashboard = () => {
         attribution: 'Tiles &copy; Esri'
       }).addTo(map);
     }
-  }, [mapView]);
+  }, [mapView, theme]);
 
   // Synchronize Markers & Polylines with Filtered Data and Animation Loop
   useEffect(() => {
@@ -362,20 +371,20 @@ const Dashboard = () => {
       const driverName = trip ? getDriverName(trip.driverId) : 'N/A';
 
       const popupContent = `
-        <div style="font-family: 'Inter', sans-serif; font-size: 11px; width: 180px; padding: 2px; color: #FFFFFF;">
-          <div style="border-bottom: 1px solid #2E2E2E; padding-bottom: 4px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-family: 'Inter', sans-serif; font-size: 11px; width: 180px; padding: 2px; color: ${theme === 'dark' ? '#FFFFFF' : '#111827'};">
+          <div style="border-bottom: 1px solid var(--border-color); padding-bottom: 4px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
             <strong style="color: #ff8a00; font-family: monospace; font-size: 12px;">${v.registrationNumber}</strong>
             <span style="font-size: 9px; padding: 1px 6px; border-radius: 4px; background-color: ${markerColor}20; color: ${markerColor}; border: 1px solid ${markerColor}40; font-weight: bold; text-transform: uppercase;">
               ${v.status === 'Dispatched' ? 'On Trip' : v.status}
             </span>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 4px; line-height: 1.4;">
-            <span style="color: #9CA3AF;">Driver:</span> <strong style="text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${driverName}</strong>
-            <span style="color: #9CA3AF;">Speed:</span> <strong style="text-align: right; font-family: monospace;">${speedValue}</strong>
-            <span style="color: #9CA3AF;">Fuel:</span> <strong style="text-align: right; font-family: monospace; color: ${parseFloat(fuelLevel) < 20 ? '#EF4444' : '#FFFFFF'}">${fuelLevel}</strong>
+            <span style="color: var(--color-text-muted);">Driver:</span> <strong style="text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${driverName}</strong>
+            <span style="color: var(--color-text-muted);">Speed:</span> <strong style="text-align: right; font-family: monospace;">${speedValue}</strong>
+            <span style="color: var(--color-text-muted);">Fuel:</span> <strong style="text-align: right; font-family: monospace; color: ${parseFloat(fuelLevel) < 20 ? '#EF4444' : (theme === 'dark' ? '#FFFFFF' : '#111827')}">${fuelLevel}</strong>
             ${trip ? `
-              <span style="color: #9CA3AF;">Destination:</span> <strong style="text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${destinationVal}</strong>
-              <span style="color: #9CA3AF;">ETA:</span> <strong style="text-align: right; color: #10B981;">${etaVal}</strong>
+              <span style="color: var(--color-text-muted);">Destination:</span> <strong style="text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${destinationVal}</strong>
+              <span style="color: var(--color-text-muted);">ETA:</span> <strong style="text-align: right; color: #10B981;">${etaVal}</strong>
             ` : ''}
           </div>
         </div>
@@ -391,100 +400,75 @@ const Dashboard = () => {
       markersRef.current[v.id] = marker;
     });
 
-  }, [filteredVehicles, filteredTrips, animationProgress]);
-
-  if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-[#0E0E0E]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#ff8a00] border-t-transparent"></div>
-          <p className="text-sm font-semibold text-gray-400">Loading TransitOps Dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-[#0E0E0E] text-white">
-        <div className="glass-card p-8 rounded-xl max-w-md text-center space-y-4">
-          <span className="material-symbols-outlined text-[#EF4444] text-[48px]">error</span>
-          <h3 className="text-xl font-bold">Connection Error</h3>
-          <p className="text-sm text-gray-400">{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="px-4 py-2 bg-[#ff8a00] rounded-lg text-sm font-bold hover:bg-[#ff8a00]/90 transition"
-          >
-            Retry Connection
-          </button>
-        </div>
-      </div>
-    );
-  }
+  }, [filteredVehicles, filteredTrips, animationProgress, theme]);
 
   return (
     <>
       <style>{`
         .glass-card {
-            background: rgba(22, 22, 22, 0.7);
+            background: var(--bg-card);
             backdrop-filter: blur(16px);
-            border: 1px solid #2E2E2E;
+            border: 1px solid var(--border-color);
+            transition: background-color 250ms ease, border-color 250ms ease;
         }
         .metric-glow {
             text-shadow: 0 0 15px rgba(255, 138, 0, 0.15);
         }
         .filter-select, .filter-input {
-            background-color: #161616;
-            border: 1px solid #2E2E2E;
-            color: #FFFFFF;
+            background-color: var(--bg-app);
+            border: 1px solid var(--border-color);
+            color: var(--color-text-primary);
             font-size: 0.75rem;
             border-radius: 6px;
             padding: 6px 12px;
             outline: none;
-            transition: border-color 0.2s;
+            transition: all 250ms ease;
         }
         .filter-select:focus, .filter-input:focus {
             border-color: #ff8a00;
         }
-        /* Custom Leaflet Map styling overrides to align with dark UI theme */
         .leaflet-container {
-            background-color: #111111 !important;
+            background-color: var(--bg-app) !important;
             outline: none;
         }
         .custom-leaflet-popup .leaflet-popup-content-wrapper {
-            background: #161616 !important;
-            color: #FFFFFF !important;
-            border: 1px solid #2E2E2E !important;
+            background: var(--bg-card) !important;
+            color: var(--color-text-primary) !important;
+            border: 1px solid var(--border-color) !important;
             border-radius: 8px !important;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6) !important;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2) !important;
             padding: 2px !important;
         }
         .custom-leaflet-popup .leaflet-popup-content {
             margin: 8px 12px !important;
         }
         .custom-leaflet-popup .leaflet-popup-tip {
-            background: #161616 !important;
-            border-left: 1px solid #2E2E2E !important;
-            border-bottom: 1px solid #2E2E2E !important;
+            background: var(--bg-card) !important;
+            border-left: 1px solid var(--border-color) !important;
+            border-bottom: 1px solid var(--border-color) !important;
         }
         .leaflet-bar {
-            border: 1px solid #2E2E2E !important;
+            border: 1px solid var(--border-color) !important;
             border-radius: 6px !important;
             overflow: hidden;
         }
         .leaflet-bar a {
-            background-color: #1E1E1E !important;
-            color: #FFFFFF !important;
-            border-bottom: 1px solid #2E2E2E !important;
+            background-color: var(--bg-card) !important;
+            color: var(--color-text-primary) !important;
+            border-bottom: 1px solid var(--border-color) !important;
             transition: background-color 0.2s;
         }
         .leaflet-bar a:hover {
-            background-color: #2E2E2E !important;
+            background-color: var(--bg-app) !important;
             color: #ff8a00 !important;
+        }
+        .chart-grid-line {
+            stroke: var(--border-color);
+            opacity: 0.4;
         }
       `}</style>
 
-      <main className="ml-[260px] min-h-screen flex flex-col bg-[#111111] text-[#e6e1e2]">
+      <main className="ml-[260px] min-h-screen flex flex-col bg-[var(--bg-app)] text-[var(--color-text-secondary)] transition-all duration-200">
         <Header 
           title="Logistics Command" 
           subtitle="Real-time operational command console"
@@ -497,7 +481,7 @@ const Dashboard = () => {
                 <span className="material-symbols-outlined text-[18px]">add</span>
                 Dispatch Trip
               </Link>
-              <Link to="/fleet" className="border border-[#2E2E2E] bg-[#1E1E1E] text-white px-5 py-2 rounded-full font-semibold hover:bg-[#2E2E2E] transition-all text-sm">
+              <Link to="/fleet" className="border border-[var(--border-color)] bg-[var(--bg-card)] text-[var(--color-text-primary)] px-5 py-2 rounded-full font-semibold hover:bg-[var(--bg-app)] transition-all text-sm">
                 Add Vehicle
               </Link>
             </div>
@@ -507,11 +491,11 @@ const Dashboard = () => {
         <div className="p-6 space-y-6 flex-grow">
 
           {/* 1. Dashboard Filters Section */}
-          <div className="glass-card p-4 rounded-xl border border-[#2E2E2E] flex flex-wrap items-center justify-between gap-4">
+          <div className="glass-card p-4 rounded-xl border border-[var(--border-color)] flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-4">
               {/* Vehicle Type Filter */}
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] text-[#9CA3AF] uppercase font-bold tracking-wider">Vehicle Type</label>
+                <label className="text-[10px] text-[var(--color-text-muted)] uppercase font-bold tracking-wider">Vehicle Type</label>
                 <select
                   className="filter-select"
                   value={vehicleTypeFilter}
@@ -531,7 +515,7 @@ const Dashboard = () => {
 
               {/* Vehicle Status Filter */}
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] text-[#9CA3AF] uppercase font-bold tracking-wider">Vehicle Status</label>
+                <label className="text-[10px] text-[var(--color-text-muted)] uppercase font-bold tracking-wider">Vehicle Status</label>
                 <select
                   className="filter-select"
                   value={vehicleStatusFilter}
@@ -547,7 +531,7 @@ const Dashboard = () => {
 
               {/* Region Filter */}
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] text-[#9CA3AF] uppercase font-bold tracking-wider">Region</label>
+                <label className="text-[10px] text-[var(--color-text-muted)] uppercase font-bold tracking-wider">Region</label>
                 <select
                   className="filter-select"
                   value={regionFilter}
@@ -563,7 +547,7 @@ const Dashboard = () => {
 
               {/* Date range filters */}
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] text-[#9CA3AF] uppercase font-bold tracking-wider">Start Date</label>
+                <label className="text-[10px] text-[var(--color-text-muted)] uppercase font-bold tracking-wider">Start Date</label>
                 <input
                   type="date"
                   className="filter-input"
@@ -573,7 +557,7 @@ const Dashboard = () => {
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[10px] text-[#9CA3AF] uppercase font-bold tracking-wider">End Date</label>
+                <label className="text-[10px] text-[var(--color-text-muted)] uppercase font-bold tracking-wider">End Date</label>
                 <input
                   type="date"
                   className="filter-input"
@@ -598,23 +582,23 @@ const Dashboard = () => {
             {/* Active Fleets */}
             <div className="glass-card p-4 rounded-xl flex flex-col justify-between h-full">
               <div className="flex justify-between items-start">
-                <span className="text-[#9CA3AF] text-xs font-semibold uppercase tracking-wider">Active Fleets</span>
+                <span className="text-[var(--color-text-muted)] text-xs font-semibold uppercase tracking-wider">Active Fleets</span>
                 <span className="material-symbols-outlined text-[#3B82F6] text-[20px]">local_shipping</span>
               </div>
               <div className="mt-4">
-                <span className="text-3xl font-extrabold text-[#FFFFFF] metric-glow">{activeVehicles}</span>
-                <p className="text-[10px] text-[#9CA3AF] mt-1">out of {totalVehicles} total</p>
+                <span className="text-3xl font-extrabold text-[var(--color-text-primary)] metric-glow">{activeVehicles}</span>
+                <p className="text-[10px] text-[var(--color-text-muted)] mt-1">out of {totalVehicles} total</p>
               </div>
             </div>
 
             {/* Available Fleet */}
             <div className="glass-card p-4 rounded-xl flex flex-col justify-between h-full">
               <div className="flex justify-between items-start">
-                <span className="text-[#9CA3AF] text-xs font-semibold uppercase tracking-wider">Available Fleet</span>
+                <span className="text-[var(--color-text-muted)] text-xs font-semibold uppercase tracking-wider">Available Fleet</span>
                 <span className="material-symbols-outlined text-[#10B981] text-[20px]">check_circle</span>
               </div>
               <div className="mt-4">
-                <span className="text-3xl font-extrabold text-[#FFFFFF] metric-glow">{availableVehicles}</span>
+                <span className="text-3xl font-extrabold text-[var(--color-text-primary)] metric-glow">{availableVehicles}</span>
                 <p className="text-[10px] text-[#10B981]/80 mt-1">Ready for dispatch</p>
               </div>
             </div>
@@ -622,11 +606,11 @@ const Dashboard = () => {
             {/* In Maintenance */}
             <div className="glass-card p-4 rounded-xl flex flex-col justify-between h-full">
               <div className="flex justify-between items-start">
-                <span className="text-[#9CA3AF] text-xs font-semibold uppercase tracking-wider">In Maintenance</span>
+                <span className="text-[var(--color-text-muted)] text-xs font-semibold uppercase tracking-wider">In Maintenance</span>
                 <span className="material-symbols-outlined text-[#FF8A00] text-[20px]">build</span>
               </div>
               <div className="mt-4">
-                <span className="text-3xl font-extrabold text-[#FFFFFF] metric-glow">{inShopVehicles}</span>
+                <span className="text-3xl font-extrabold text-[var(--color-text-primary)] metric-glow">{inShopVehicles}</span>
                 <p className="text-[10px] text-[#FF8A00]/80 mt-1">Undergoing service</p>
               </div>
             </div>
@@ -634,11 +618,11 @@ const Dashboard = () => {
             {/* Pending Trips */}
             <div className="glass-card p-4 rounded-xl flex flex-col justify-between h-full">
               <div className="flex justify-between items-start">
-                <span className="text-[#9CA3AF] text-xs font-semibold uppercase tracking-wider">Pending Trips</span>
+                <span className="text-[var(--color-text-muted)] text-xs font-semibold uppercase tracking-wider">Pending Trips</span>
                 <span className="material-symbols-outlined text-[#A855F7] text-[20px]">pending</span>
               </div>
               <div className="mt-4">
-                <span className="text-3xl font-extrabold text-[#FFFFFF] metric-glow">{pendingTripsCount}</span>
+                <span className="text-3xl font-extrabold text-[var(--color-text-primary)] metric-glow">{pendingTripsCount}</span>
                 <p className="text-[10px] text-[#A855F7]/80 mt-1">Awaiting dispatch</p>
               </div>
             </div>
@@ -646,23 +630,23 @@ const Dashboard = () => {
             {/* Total Drivers */}
             <div className="glass-card p-4 rounded-xl flex flex-col justify-between h-full">
               <div className="flex justify-between items-start">
-                <span className="text-[#9CA3AF] text-xs font-semibold uppercase tracking-wider">Total Drivers</span>
+                <span className="text-[var(--color-text-muted)] text-xs font-semibold uppercase tracking-wider">Total Drivers</span>
                 <span className="material-symbols-outlined text-[#3B82F6] text-[20px]">badge</span>
               </div>
               <div className="mt-4">
-                <span className="text-3xl font-extrabold text-[#FFFFFF] metric-glow">{totalDrivers}</span>
-                <p className="text-[10px] text-[#9CA3AF] mt-1">{availableDrivers} available</p>
+                <span className="text-3xl font-extrabold text-[var(--color-text-primary)] metric-glow">{totalDrivers}</span>
+                <p className="text-[10px] text-[var(--color-text-muted)] mt-1">{availableDrivers} available</p>
               </div>
             </div>
 
             {/* Ongoing Trips */}
             <div className="glass-card p-4 rounded-xl flex flex-col justify-between h-full">
               <div className="flex justify-between items-start">
-                <span className="text-[#9CA3AF] text-xs font-semibold uppercase tracking-wider">Ongoing Trips</span>
+                <span className="text-[var(--color-text-muted)] text-xs font-semibold uppercase tracking-wider">Ongoing Trips</span>
                 <span className="material-symbols-outlined text-cyan-400 text-[20px]">route</span>
               </div>
               <div className="mt-4">
-                <span className="text-3xl font-extrabold text-[#FFFFFF] metric-glow">{activeTripsCount}</span>
+                <span className="text-3xl font-extrabold text-[var(--color-text-primary)] metric-glow">{activeTripsCount}</span>
                 <p className="text-[10px] text-cyan-400/80 mt-1">Currently en route</p>
               </div>
             </div>
@@ -670,15 +654,15 @@ const Dashboard = () => {
             {/* Fleet Utilization */}
             <div className="glass-card p-4 rounded-xl flex flex-col justify-between h-full col-span-1 sm:col-span-2">
               <div className="flex justify-between items-start">
-                <span className="text-[#9CA3AF] text-xs font-semibold uppercase tracking-wider">Fleet Utilization</span>
+                <span className="text-[var(--color-text-muted)] text-xs font-semibold uppercase tracking-wider">Fleet Utilization</span>
                 <span className="material-symbols-outlined text-yellow-400 text-[20px]">analytics</span>
               </div>
               <div className="mt-4">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-extrabold text-[#FFFFFF] metric-glow">{fleetUtilization}%</span>
-                  <span className="text-xs text-[#9CA3AF]">dispatched ratio</span>
+                  <span className="text-3xl font-extrabold text-[var(--color-text-primary)] metric-glow">{fleetUtilization}%</span>
+                  <span className="text-xs text-[var(--color-text-muted)]">dispatched ratio</span>
                 </div>
-                <div className="w-full bg-[#2E2E2E] h-1.5 rounded-full mt-3 overflow-hidden">
+                <div className="w-full bg-[var(--border-color)] h-1.5 rounded-full mt-3 overflow-hidden">
                   <div className="bg-[#ff8a00] h-full" style={{ width: `${fleetUtilization}%` }}></div>
                 </div>
               </div>
@@ -689,15 +673,15 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
             {/* Recent Trips Table */}
             <div className="glass-card p-6 rounded-xl lg:col-span-2 space-y-4 flex flex-col justify-between">
-              <div className="flex justify-between items-center border-b border-[#2E2E2E] pb-3">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <div className="flex justify-between items-center border-b border-[var(--border-color)] pb-3">
+                <h3 className="text-lg font-bold text-[var(--color-text-primary)] flex items-center gap-2">
                   <span className="material-symbols-outlined text-[#ff8a00]">history</span>
                   Recent Trip Actions
                 </h3>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-[#9CA3AF] font-semibold">Filter:</span>
+                  <span className="text-xs text-[var(--color-text-muted)] font-semibold">Filter:</span>
                   <select 
-                    className="bg-[#161616] border border-[#2E2E2E] rounded px-2 py-1 text-xs text-white outline-none focus:border-[#ff8a00]"
+                    className="bg-[var(--bg-app)] border border-[var(--border-color)] rounded px-2 py-1 text-xs text-[var(--color-text-primary)] outline-none focus:border-[#ff8a00]"
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
                   >
@@ -714,7 +698,7 @@ const Dashboard = () => {
               <div className="overflow-x-auto flex-grow pt-2">
                 <table className="w-full text-left text-sm">
                   <thead>
-                    <tr className="border-b border-[#2E2E2E] text-[#9CA3AF] text-xs font-semibold uppercase">
+                    <tr className="border-b border-[var(--border-color)] text-[var(--color-text-muted)] text-xs font-semibold uppercase">
                       <th className="py-3 px-2">Trip ID</th>
                       <th className="py-3 px-2">Vehicle</th>
                       <th className="py-3 px-2">Driver</th>
@@ -724,20 +708,20 @@ const Dashboard = () => {
                       <th className="py-3 px-2 text-center">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#2E2E2E]/40 text-[#D1D5DB]">
+                  <tbody className="divide-y divide-[var(--border-color)]/40 text-[var(--color-text-secondary)]">
                     {filteredTrips.length === 0 ? (
                       <tr>
-                        <td colSpan="7" className="py-8 text-center text-[#9CA3AF]">No trips match the filters.</td>
+                        <td colSpan="7" className="py-8 text-center text-[var(--color-text-muted)]">No trips match the filters.</td>
                       </tr>
                     ) : (
                       filteredTrips.slice(0, 8).map((trip) => (
-                        <tr key={trip.id} className="hover:bg-[#1E1E1E]/50 transition-colors">
+                        <tr key={trip.id} className="hover:bg-[var(--bg-app)] transition-colors">
                           <td className="py-3 px-2 font-mono font-bold text-xs text-[#ff8a00]">{trip.tripId}</td>
-                          <td className="py-3 px-2 text-xs font-mono text-[#D1D5DB]">{getVehicleReg(trip.vehicleId)}</td>
-                          <td className="py-3 px-2 text-xs text-[#D1D5DB]">{getDriverName(trip.driverId)}</td>
-                          <td className="py-3 px-2 text-xs text-[#D1D5DB]">{trip.origin} → {trip.destination}</td>
-                          <td className="py-3 px-2 text-xs text-right font-mono font-bold text-[#D1D5DB]">{(trip.cargoWeight).toLocaleString()} kg</td>
-                          <td className="py-3 px-2 text-xs text-center text-[#D1D5DB]">{getTripETA(trip)}</td>
+                          <td className="py-3 px-2 text-xs font-mono text-[var(--color-text-secondary)]">{getVehicleReg(trip.vehicleId)}</td>
+                          <td className="py-3 px-2 text-xs text-[var(--color-text-secondary)]">{getDriverName(trip.driverId)}</td>
+                          <td className="py-3 px-2 text-xs text-[var(--color-text-secondary)]">{trip.origin} → {trip.destination}</td>
+                          <td className="py-3 px-2 text-xs text-right font-mono font-bold text-[var(--color-text-secondary)]">{(trip.cargoWeight).toLocaleString()} kg</td>
+                          <td className="py-3 px-2 text-xs text-center text-[var(--color-text-secondary)]">{getTripETA(trip)}</td>
                           <td className="py-3 px-2 text-center">
                             <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${getStatusPillClass(trip.status)}`}>
                               {trip.status}
@@ -753,22 +737,22 @@ const Dashboard = () => {
 
             {/* Fleet Status Distribution Progress Bars */}
             <div className="glass-card p-6 rounded-xl space-y-6 flex flex-col justify-between">
-              <div className="border-b border-[#2E2E2E] pb-3">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+              <div className="border-b border-[var(--border-color)] pb-3">
+                <h3 className="text-lg font-bold text-[var(--color-text-primary)] flex items-center gap-2">
                   <span className="material-symbols-outlined text-[#ff8a00]">bar_chart</span>
                   Fleet Status Distribution
                 </h3>
-                <p className="text-[10px] text-[#9CA3AF] mt-1">Live overview of assets activity</p>
+                <p className="text-[10px] text-[var(--color-text-muted)] mt-1">Live overview of assets activity</p>
               </div>
 
               <div className="space-y-6 flex-grow flex flex-col justify-center">
                 {/* Available Vehicles progress bar */}
                 <div>
                   <div className="flex justify-between text-xs mb-1">
-                    <span className="text-[#D1D5DB] font-semibold">Available Vehicles</span>
+                    <span className="text-[var(--color-text-secondary)] font-semibold">Available Vehicles</span>
                     <span className="text-[#10B981] font-bold">{availableVehicles} ({totalVehicles > 0 ? Math.round((availableVehicles/totalVehicles)*100) : 0}%)</span>
                   </div>
-                  <div className="w-full bg-[#1E1E1E] border border-[#2E2E2E] h-3.5 rounded-full overflow-hidden">
+                  <div className="w-full bg-[var(--bg-app)] border border-[var(--border-color)] h-3.5 rounded-full overflow-hidden">
                     <div className="bg-[#10B981] h-full rounded-full transition-all duration-500" style={{ width: `${(availableVehicles/totalVehicles)*100 || 0}%` }}></div>
                   </div>
                 </div>
@@ -776,10 +760,10 @@ const Dashboard = () => {
                 {/* On Trip progress bar */}
                 <div>
                   <div className="flex justify-between text-xs mb-1">
-                    <span className="text-[#D1D5DB] font-semibold">On Trip</span>
+                    <span className="text-[var(--color-text-secondary)] font-semibold">On Trip</span>
                     <span className="text-[#3B82F6] font-bold">{activeVehicles} ({totalVehicles > 0 ? Math.round((activeVehicles/totalVehicles)*100) : 0}%)</span>
                   </div>
-                  <div className="w-full bg-[#1E1E1E] border border-[#2E2E2E] h-3.5 rounded-full overflow-hidden">
+                  <div className="w-full bg-[var(--bg-app)] border border-[var(--border-color)] h-3.5 rounded-full overflow-hidden">
                     <div className="bg-[#3B82F6] h-full rounded-full transition-all duration-500" style={{ width: `${(activeVehicles/totalVehicles)*100 || 0}%` }}></div>
                   </div>
                 </div>
@@ -787,10 +771,10 @@ const Dashboard = () => {
                 {/* In Maintenance progress bar */}
                 <div>
                   <div className="flex justify-between text-xs mb-1">
-                    <span className="text-[#D1D5DB] font-semibold">In Maintenance</span>
+                    <span className="text-[var(--color-text-secondary)] font-semibold">In Maintenance</span>
                     <span className="text-[#FF8A00] font-bold">{inShopVehicles} ({totalVehicles > 0 ? Math.round((inShopVehicles/totalVehicles)*100) : 0}%)</span>
                   </div>
-                  <div className="w-full bg-[#1E1E1E] border border-[#2E2E2E] h-3.5 rounded-full overflow-hidden">
+                  <div className="w-full bg-[var(--bg-app)] border border-[var(--border-color)] h-3.5 rounded-full overflow-hidden">
                     <div className="bg-[#FF8A00] h-full rounded-full transition-all duration-500" style={{ width: `${(inShopVehicles/totalVehicles)*100 || 0}%` }}></div>
                   </div>
                 </div>
@@ -798,10 +782,10 @@ const Dashboard = () => {
                 {/* Retired progress bar */}
                 <div>
                   <div className="flex justify-between text-xs mb-1">
-                    <span className="text-[#D1D5DB] font-semibold">Retired</span>
+                    <span className="text-[var(--color-text-secondary)] font-semibold">Retired</span>
                     <span className="text-[#EF4444] font-bold">{retiredVehicles} ({totalVehicles > 0 ? Math.round((retiredVehicles/totalVehicles)*100) : 0}%)</span>
                   </div>
-                  <div className="w-full bg-[#1E1E1E] border border-[#2E2E2E] h-3.5 rounded-full overflow-hidden">
+                  <div className="w-full bg-[var(--bg-app)] border border-[var(--border-color)] h-3.5 rounded-full overflow-hidden">
                     <div className="bg-[#EF4444] h-full rounded-full transition-all duration-500" style={{ width: `${(retiredVehicles/totalVehicles)*100 || 0}%` }}></div>
                   </div>
                 </div>
@@ -812,16 +796,16 @@ const Dashboard = () => {
           {/* Row 3: Modern Charts & Interactive Live Map */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
             {/* Weekly Dispatch Activity Chart (Custom SVG Line Chart) */}
-            <div className="glass-card p-6 rounded-xl lg:col-span-2 space-y-4 border border-[#2E2E2E]">
-              <div className="border-b border-[#2E2E2E] pb-3 flex justify-between items-center">
+            <div className="glass-card p-6 rounded-xl lg:col-span-2 space-y-4 border border-[var(--border-color)]">
+              <div className="border-b border-[var(--border-color)] pb-3 flex justify-between items-center">
                 <div>
                   <h3 className="text-lg font-bold text-white flex items-center gap-2">
                     <span className="material-symbols-outlined text-[#ff8a00]">insights</span>
                     Weekly Dispatch Activity
                   </h3>
-                  <p className="text-[10px] text-[#9CA3AF] mt-1">Total trips completed vs dispatched over the week</p>
+                  <p className="text-[10px] text-[var(--color-text-muted)] mt-1">Total trips completed vs dispatched over the week</p>
                 </div>
-                <div className="flex items-center gap-4 text-xs font-semibold text-[#D1D5DB]">
+                <div className="flex items-center gap-4 text-xs font-semibold text-[var(--color-text-secondary)]">
                   <div className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded bg-[#ff8a00]"></div>
                     <span>Dispatched</span>
@@ -837,9 +821,9 @@ const Dashboard = () => {
               <div className="h-64 flex items-center justify-center relative w-full pt-4">
                 <svg className="w-full h-full overflow-visible" viewBox="0 0 500 200" preserveAspectRatio="none">
                   {/* Grid Lines */}
-                  <line x1="0" y1="40" x2="500" y2="40" stroke="#2E2E2E" strokeWidth="1" strokeDasharray="3" />
-                  <line x1="0" y1="90" x2="500" y2="90" stroke="#2E2E2E" strokeWidth="1" strokeDasharray="3" />
-                  <line x1="0" y1="140" x2="500" y2="140" stroke="#2E2E2E" strokeWidth="1" strokeDasharray="3" />
+                  <line x1="0" y1="40" x2="500" y2="40" className="chart-grid-line" stroke="#2E2E2E" strokeWidth="1" strokeDasharray="3" />
+                  <line x1="0" y1="90" x2="500" y2="90" className="chart-grid-line" stroke="#2E2E2E" strokeWidth="1" strokeDasharray="3" />
+                  <line x1="0" y1="140" x2="500" y2="140" className="chart-grid-line" stroke="#2E2E2E" strokeWidth="1" strokeDasharray="3" />
 
                   {/* Dispatched Area Under Line */}
                   <path d="M 0 160 Q 80 80, 160 110 T 320 60 T 500 40 L 500 180 L 0 180 Z" fill="url(#dispatchedGradient)" opacity="0.06" />
@@ -869,7 +853,7 @@ const Dashboard = () => {
                 </svg>
 
                 {/* Y Axis Labels */}
-                <div className="absolute left-0 h-[180px] top-4 flex flex-col justify-between text-[10px] text-[#9CA3AF] pointer-events-none">
+                <div className="absolute left-0 h-[180px] top-4 flex flex-col justify-between text-[10px] text-[var(--color-text-muted)] pointer-events-none">
                   <span>50 Trips</span>
                   <span>30 Trips</span>
                   <span>10 Trips</span>
@@ -878,7 +862,7 @@ const Dashboard = () => {
               </div>
 
               {/* X Axis Labels */}
-              <div className="flex justify-between text-[10px] text-[#9CA3AF] px-6 font-semibold uppercase tracking-wider pt-2">
+              <div className="flex justify-between text-[10px] text-[var(--color-text-muted)] px-6 font-semibold uppercase tracking-wider pt-2">
                 <span>Mon</span>
                 <span>Tue</span>
                 <span>Wed</span>
@@ -890,23 +874,23 @@ const Dashboard = () => {
             </div>
 
             {/* Google Maps-style Live Interactive Map */}
-            <div className="glass-card rounded-xl overflow-hidden relative border border-[#2E2E2E] min-h-[350px] flex flex-col justify-between">
+            <div className="glass-card rounded-xl overflow-hidden relative border border-[var(--border-color)] min-h-[350px] flex flex-col justify-between">
               {/* Map Header Control Panel */}
-              <div className="absolute top-4 left-4 z-[1000] bg-[#161616]/95 backdrop-blur-md p-3 rounded-lg border border-[#2E2E2E] shadow-2xl flex flex-col gap-2">
-                <h4 className="font-bold text-xs text-white flex items-center gap-1.5">
+              <div className="absolute top-4 left-4 z-[1000] bg-[var(--bg-card)] border border-[var(--border-color)] p-3 rounded-lg shadow-2xl flex flex-col gap-2">
+                <h4 className="font-bold text-xs text-[var(--color-text-primary)] flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#10B981] animate-ping"></span>
                   Live Fleet Tracker
                 </h4>
                 <div className="flex gap-2">
                   <button 
                     onClick={() => setMapView('road')} 
-                    className={`px-2 py-1 text-[9px] font-bold rounded uppercase transition-all cursor-pointer ${mapView === 'road' ? 'bg-[#ff8a00] text-black' : 'bg-[#1E1E1E] text-white border border-[#2E2E2E] hover:bg-[#2E2E2E]'}`}
+                    className={`px-2 py-1 text-[9px] font-bold rounded uppercase transition-all cursor-pointer ${mapView === 'road' ? 'bg-[#ff8a00] text-black' : 'bg-[var(--bg-app)] text-[var(--color-text-primary)] border border-[var(--border-color)] hover:bg-[var(--bg-app)]/80'}`}
                   >
                     Road Map
                   </button>
                   <button 
                     onClick={() => setMapView('satellite')} 
-                    className={`px-2 py-1 text-[9px] font-bold rounded uppercase transition-all cursor-pointer ${mapView === 'satellite' ? 'bg-[#ff8a00] text-black' : 'bg-[#1E1E1E] text-white border border-[#2E2E2E] hover:bg-[#2E2E2E]'}`}
+                    className={`px-2 py-1 text-[9px] font-bold rounded uppercase transition-all cursor-pointer ${mapView === 'satellite' ? 'bg-[#ff8a00] text-black' : 'bg-[var(--bg-app)] text-[var(--color-text-primary)] border border-[var(--border-color)] hover:bg-[var(--bg-app)]/80'}`}
                   >
                     Satellite
                   </button>

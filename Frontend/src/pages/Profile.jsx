@@ -138,9 +138,10 @@ const Profile = () => {
     <>
       <style>{`
         .glass-card {
-          background: rgba(30, 30, 30, 0.6);
+          background: var(--bg-card);
           backdrop-filter: blur(12px);
-          border: 1px solid #2E2E2E;
+          border: 1px solid var(--border-color);
+          transition: all 250ms ease;
         }
 
         .avatar-glow {
@@ -148,15 +149,15 @@ const Profile = () => {
         }
 
         .form-input {
-          background-color: #161616;
-          border: 1px solid #2E2E2E;
-          color: #e6e1e2;
+          background-color: var(--bg-app);
+          border: 1px solid var(--border-color);
+          color: var(--color-text-primary);
           width: 100%;
           height: 42px;
           padding: 0 14px;
           border-radius: 8px;
           outline: none;
-          transition: all 0.2s ease-in-out;
+          transition: all 2.2s ease-in-out;
         }
 
         .form-input:focus {
@@ -165,7 +166,7 @@ const Profile = () => {
         }
       `}</style>
 
-      <main className="ml-[260px] min-h-screen flex flex-col bg-[#111111] text-[#e6e1e2]">
+      <main className="ml-[260px] min-h-screen flex flex-col bg-[var(--bg-app)] text-[var(--color-text-secondary)] transition-all duration-200">
         <Header 
           title="Command Profile" 
           subtitle="Manage your operator credentials, avatar identifier, and node clearance"
@@ -192,13 +193,13 @@ const Profile = () => {
             
             {/* LEFT COLUMN: Hero Panel (Avatar Selection & Metadata) */}
             <div className="lg:col-span-1 space-y-6">
-              <div className="glass-card p-6 rounded-xl border border-[#2E2E2E] flex flex-col items-center text-center relative overflow-hidden">
+              <div className="glass-card p-6 rounded-xl border border-[var(--border-color)] flex flex-col items-center text-center relative overflow-hidden">
                 {/* Visual Accent */}
                 <div className="absolute top-0 left-0 w-full h-1.5 bg-[#ff8a00]"></div>
                 
                 {/* Avatar container */}
                 <div className="relative group mt-4">
-                  <div className="w-28 h-28 rounded-full border-2 border-[#2E2E2E] overflow-hidden avatar-glow">
+                  <div className="w-28 h-28 rounded-full border-2 border-[var(--border-color)] overflow-hidden avatar-glow">
                     <img 
                       src={selectedAvatar} 
                       alt="Avatar ID" 
@@ -230,22 +231,22 @@ const Profile = () => {
 
                 {/* Avatar selector modal-like dropdown inline */}
                 {showAvatarSelector && (
-                  <div className="mt-6 p-4 border-t border-[#2E2E2E] w-full space-y-4 animate-fade-in bg-[#161616]/80 rounded-lg">
-                    <p className="text-xs font-semibold text-on-surface-variant/80">Select Registry Avatar:</p>
+                  <div className="mt-6 p-4 border-t border-[var(--border-color)] w-full space-y-4 animate-fade-in bg-[var(--bg-app)]/80 rounded-lg">
+                    <p className="text-xs font-semibold text-[var(--color-text-muted)]">Select Registry Avatar:</p>
                     <div className="flex justify-center gap-3">
                       {AVATAR_OPTIONS.map((imgUrl, i) => (
                         <button 
                           key={i} 
                           onClick={() => setSelectedAvatar(imgUrl)}
-                          className={`w-10 h-10 rounded-full overflow-hidden border-2 cursor-pointer transition-all ${selectedAvatar === imgUrl ? 'border-[#ff8a00] scale-105' : 'border-[#2E2E2E] hover:border-on-surface-variant'}`}
+                          className={`w-10 h-10 rounded-full overflow-hidden border-2 cursor-pointer transition-all ${selectedAvatar === imgUrl ? 'border-[#ff8a00] scale-105' : 'border-[var(--border-color)] hover:border-on-surface-variant'}`}
                         >
                           <img src={imgUrl} alt={`Option ${i+1}`} className="w-full h-full object-cover" />
                         </button>
                       ))}
                     </div>
 
-                    <form onSubmit={handleApplyCustomAvatar} className="space-y-2 pt-2 border-t border-[#2E2E2E]/50">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/60 text-left">Or Paste Image URL:</p>
+                    <form onSubmit={handleApplyCustomAvatar} className="space-y-2 pt-2 border-t border-[var(--border-color)]/50">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-muted)] text-left">Or Paste Image URL:</p>
                       <div className="flex gap-2">
                         <input 
                           type="url" 
@@ -263,7 +264,7 @@ const Profile = () => {
                 )}
 
                 {/* Registry Metadata statistics card */}
-                <div className="w-full mt-8 border-t border-[#2E2E2E]/60 pt-5 text-left space-y-3.5">
+                <div className="w-full mt-8 border-t border-[var(--border-color)]/60 pt-5 text-left space-y-3.5">
                   <h4 className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant/50">Registry Details</h4>
                   
                   <div className="flex justify-between items-center text-xs">
@@ -291,8 +292,8 @@ const Profile = () => {
             <div className="lg:col-span-2 space-y-6">
               
               {/* Form editing card */}
-              <div className="glass-card p-6 rounded-xl border border-[#2E2E2E]">
-                <h3 className="text-base font-bold border-b border-[#2E2E2E] pb-3.5 flex items-center gap-2">
+              <div className="glass-card p-6 rounded-xl border border-[var(--border-color)]">
+                <h3 className="text-base font-bold border-b border-[var(--border-color)] pb-3.5 flex items-center gap-2 text-[var(--color-text-primary)]">
                   <span className="material-symbols-outlined text-[#ff8a00]">manage_accounts</span>
                   Credentials Registry
                 </h3>
@@ -300,7 +301,7 @@ const Profile = () => {
                 <form onSubmit={handleSave} className="space-y-4 pt-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs uppercase tracking-wider font-semibold text-on-surface-variant/70">First Name</label>
+                      <label className="text-xs uppercase tracking-wider font-semibold text-[var(--color-text-muted)]">First Name</label>
                       <input 
                         type="text" 
                         required
@@ -312,7 +313,7 @@ const Profile = () => {
                     </div>
                     
                     <div className="space-y-1.5">
-                      <label className="text-xs uppercase tracking-wider font-semibold text-on-surface-variant/70">Last Name</label>
+                      <label className="text-xs uppercase tracking-wider font-semibold text-[var(--color-text-muted)]">Last Name</label>
                       <input 
                         type="text" 
                         required
@@ -325,7 +326,7 @@ const Profile = () => {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs uppercase tracking-wider font-semibold text-on-surface-variant/70">Email Identifier</label>
+                    <label className="text-xs uppercase tracking-wider font-semibold text-[var(--color-text-muted)]">Email Identifier</label>
                     <input 
                       type="email" 
                       required
@@ -359,13 +360,13 @@ const Profile = () => {
               </div>
 
               {/* Security Scope summary card */}
-              <div className="glass-card p-6 rounded-xl border border-[#2E2E2E] space-y-4">
-                <h3 className="text-base font-bold border-b border-[#2E2E2E] pb-3 flex items-center gap-2">
+              <div className="glass-card p-6 rounded-xl border border-[var(--border-color)] space-y-4">
+                <h3 className="text-base font-bold border-b border-[var(--border-color)] pb-3 flex items-center gap-2 text-[var(--color-text-primary)]">
                   <span className="material-symbols-outlined text-[#ff8a00]">security</span>
                   Role Permissions Authorization
                 </h3>
-                <p className="text-xs text-on-surface-variant/80">
-                  Your profile has clearance to access the following ERP modules based on your role: <span className="font-bold text-on-surface">{roleLabel}</span>.
+                <p className="text-xs text-[var(--color-text-muted)]">
+                  Your profile has clearance to access the following ERP modules based on your role: <span className="font-bold text-[var(--color-text-primary)]">{roleLabel}</span>.
                 </p>
 
                 {/* Modules pills grid */}
@@ -373,7 +374,7 @@ const Profile = () => {
                   {modules.map((mod, idx) => (
                     <div 
                       key={idx} 
-                      className="bg-[#1E1E1E] border border-[#2E2E2E] px-3.5 py-3 rounded-lg flex items-center gap-2 text-xs font-semibold text-on-surface hover:border-[#ff8a00]/40 transition-colors"
+                      className="bg-[var(--bg-card)] border border-[var(--border-color)] px-3.5 py-3 rounded-lg flex items-center gap-2 text-xs font-semibold text-[var(--color-text-primary)] hover:border-[#ff8a00]/40 transition-colors animate-fade-in"
                     >
                       <span className="w-1.5 h-1.5 rounded-full bg-[#ff8a00]"></span>
                       <span>{mod}</span>
@@ -382,10 +383,10 @@ const Profile = () => {
                 </div>
 
                 {/* Security details note banner */}
-                <div className="bg-[#161616] p-4 rounded-lg border border-[#2E2E2E] flex items-start gap-3 mt-4 text-xs text-on-surface-variant/80">
+                <div className="bg-[var(--bg-app)] p-4 rounded-lg border border-[var(--border-color)] flex items-start gap-3 mt-4 text-xs text-[var(--color-text-secondary)]">
                   <span className="material-symbols-outlined text-[#ff8a00] text-[20px] shrink-0 mt-0.5">info</span>
                   <div>
-                    <p className="font-bold text-on-surface">Need a role change?</p>
+                    <p className="font-bold text-[var(--color-text-primary)]">Need a role change?</p>
                     <p className="mt-0.5 leading-relaxed">
                       Role clearances are governed by Active Directory domain security policies. Please contact the Operations Admin to escalate permissions or request new module additions.
                     </p>

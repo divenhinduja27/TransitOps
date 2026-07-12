@@ -21,11 +21,13 @@ import NotFound from './pages/NotFound';
 // Components & Providers
 import ProtectedRoute from './components/ProtectedRoute';
 import { ERPProvider } from './context/ERPContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 function App() {
   return (
-    <ERPProvider>
-      <Router>
+    <ThemeProvider>
+      <ERPProvider>
+        <Router>
         <Routes>
           {/* Redirect root to /dashboard (which redirects to /login if unauthenticated) */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -54,7 +56,8 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Router>
-    </ERPProvider>
+      </ERPProvider>
+    </ThemeProvider>
   );
 }
 

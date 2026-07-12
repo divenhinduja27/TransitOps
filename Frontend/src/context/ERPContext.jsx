@@ -373,17 +373,46 @@ export const ERPProvider = ({ children }) => {
     return newExpense;
   };
 
+  const getVehicleFuelCost = (vehicleId) => {
+    const targetId = String(vehicleId);
+    return fuelLogs
+      .filter(f => String(f.vehicleId) === targetId)
+      .reduce((sum, f) => sum + Number(f.cost), 0);
+  };
+
+  const getVehicleMaintenanceCost = (vehicleId) => {
+    const targetId = String(vehicleId);
+    return maintenance
+      .filter(m => String(m.vehicleId) === targetId)
+      .reduce((sum, m) => sum + Number(m.cost), 0);
+  };
+
+  const getVehicleTollCost = (vehicleId) => {
+    const targetId = String(vehicleId);
+    return expenses
+      .filter(e => String(e.vehicleId) === targetId && e.type === 'Toll Charges')
+      .reduce((sum, e) => sum + Number(e.amount), 0);
+  };
+
+  const getVehicleMiscCost = (vehicleId) => {
+    const targetId = String(vehicleId);
+    return expenses
+      .filter(e => String(e.vehicleId) === targetId && e.type !== 'Toll Charges')
+      .reduce((sum, e) => sum + Number(e.amount), 0);
+  };
+
   const getVehicleOperationalCost = (vehicleId) => {
-    const numId = Number(vehicleId);
-    const fuelCost = fuelLogs.filter(f => Number(f.vehicleId) === numId).reduce((sum, f) => sum + f.cost, 0);
-    const serviceCost = maintenance.filter(m => Number(m.vehicleId) === numId).reduce((sum, m) => sum + m.cost, 0);
-    const miscCost = expenses.filter(e => Number(e.vehicleId) === numId).reduce((sum, e) => sum + e.amount, 0);
-    return fuelCost + serviceCost + miscCost;
+    return getVehicleFuelCost(vehicleId) +
+           getVehicleMaintenanceCost(vehicleId) +
+           getVehicleTollCost(vehicleId) +
+           getVehicleMiscCost(vehicleId);
   };
 
   const getVehicleRevenue = (vehicleId) => {
-    const numId = Number(vehicleId);
-    return trips.filter(t => Number(t.vehicleId) === numId && t.status === 'Completed').reduce((sum, t) => sum + (t.cost * 1.4), 0);
+    const targetId = String(vehicleId);
+    return trips
+      .filter(t => String(t.vehicleId) === targetId && t.status === 'Completed')
+      .reduce((sum, t) => sum + (Number(t.cost) * 1.4), 0);
   };
 
   return (
@@ -410,6 +439,10 @@ export const ERPProvider = ({ children }) => {
         completeMaintenanceRecord,
         addFuelLog,
         addExpense,
+        getVehicleFuelCost,
+        getVehicleMaintenanceCost,
+        getVehicleTollCost,
+        getVehicleMiscCost,
         getVehicleOperationalCost,
         getVehicleRevenue
       }}
