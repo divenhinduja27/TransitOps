@@ -147,11 +147,17 @@ const Profile = () => {
     }, 1000);
   };
 
+  const handleAvatarChange = (avatarUrl) => {
+    setSelectedAvatar(avatarUrl);
+    updateUser({ avatar: avatarUrl });
+  };
+
   // Custom avatar submit
   const handleApplyCustomAvatar = (e) => {
     e.preventDefault();
-    if (customAvatarUrl.trim()) {
-      setSelectedAvatar(customAvatarUrl.trim());
+    const url = customAvatarUrl.trim();
+    if (url) {
+      handleAvatarChange(url);
       setShowAvatarSelector(false);
       setCustomAvatarUrl('');
     }

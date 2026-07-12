@@ -19,6 +19,17 @@ const TripManagement = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // Toast Notifications State
+  const [toasts, setToasts] = useState([]);
+
+  const showToast = (message, title = 'Notification', icon = 'notifications') => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, message, title, icon }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, 4500);
+  };
+
   // Complete Trip modal state
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [completeTripId, setCompleteTripId] = useState(null);
@@ -50,8 +61,11 @@ const TripManagement = () => {
     setError('');
     setSuccess('');
     try {
+      const trip = trips.find(t => t.id === tripId);
+      const label = trip ? trip.tripId : `TRP-${tripId}`;
       await updateTripStatus(tripId, status, details);
       setSuccess(`Trip status updated to ${status}.`);
+      showToast(`${label} status set to ${status} successfully.`, 'Status Updated', 'change_circle');
     } catch (err) {
       setError(err.response?.data?.error || err.message);
     }
@@ -74,8 +88,11 @@ const TripManagement = () => {
     setError('');
     setSuccess('');
     try {
+      const trip = trips.find(t => t.id === completeTripId);
+      const label = trip ? trip.tripId : `TRP-${completeTripId}`;
       await updateTripStatus(completeTripId, 'Completed', completionData);
       setSuccess('Trip successfully completed.');
+      showToast(`${label} completed. Operator safety log and fuel metrics saved.`, 'Trip Completed', 'task_alt');
       setShowCompleteModal(false);
     } catch (err) {
       setError(err.response?.data?.error || err.message);
@@ -99,6 +116,7 @@ const TripManagement = () => {
     try {
       const newTrip = await createTrip(formData);
       setSuccess(`Trip ${newTrip.tripId} successfully dispatched.`);
+      showToast(`${newTrip.tripId} dispatched successfully to ${formData.destination}.`, 'Route Active', 'local_shipping');
       setFormData({
         vehicleId: '',
         driverId: '',
@@ -147,6 +165,30 @@ const TripManagement = () => {
         }
         .form-input:focus {
             border-color: #ff8a00;
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateX(120%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        .animate-slide-in {
+            animation: slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes toastProgress {
+            from {
+                width: 100%;
+            }
+            to {
+                width: 0%;
+            }
+        }
+        .toast-progress {
+            animation: toastProgress 4.5s linear forwards;
         }
       `}</style>
 
@@ -441,6 +483,36 @@ const TripManagement = () => {
             </div>
           </div>
         )}
+
+        {/* Floating Toast Notification Container */}
+        <div className="fixed top-6 right-6 z-[9999] space-y-3 pointer-events-none">
+          {toasts.map(toast => (
+            <div 
+              key={toast.id}
+              className="pointer-events-auto p-4 rounded-xl border border-green-500/20 bg-black/90 max-w-sm animate-slide-in relative overflow-hidden shadow-2xl flex items-center gap-3 text-xs"
+              style={{
+                boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5)',
+                minWidth: '320px'
+              }}
+            >
+              <div className="h-8 w-8 rounded-full bg-green-500/10 flex items-center justify-center border border-green-500/20 text-green-400 shrink-0">
+                <span className="material-symbols-outlined text-[18px]">{toast.icon}</span>
+              </div>
+              <div className="flex-grow pr-4">
+                <div className="font-bold text-white tracking-wide">{toast.title}</div>
+                <div className="text-[11px] text-gray-400 mt-0.5 leading-relaxed">{toast.message}</div>
+              </div>
+              <button 
+                onClick={() => setToasts(prev => prev.filter(t => t.id !== toast.id))}
+                className="text-gray-500 hover:text-white transition shrink-0 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[16px]">close</span>
+              </button>
+              {/* Progress countdown indicator */}
+              <div className="absolute bottom-0 left-0 h-0.5 bg-green-500 toast-progress"></div>
+            </div>
+          ))}
+        </div>
       </main>
     </>
   );

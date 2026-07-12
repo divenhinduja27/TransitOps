@@ -133,9 +133,9 @@ body {
 
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1.3;
-  color: #ffffff;
+  color: var(--color-text-primary);
 }
 
 h1 { font-size: var(--font-size-4xl); }
@@ -262,3 +262,28 @@ select:focus {
 .slide-in {
   animation: slideIn 0.3s ease-out;
 }
+
+/* Light Mode Typography Boldness & Contrast Overrides */
+html.light body {
+  font-weight: 500;
+  color: #1f2937; /* Darker gray for general text */
+}
+
+html.light p {
+  color: #374151; /* Darker slate gray for description blocks */
+  font-weight: 500;
+}
+
+html.light h1, html.light h2, html.light h3, html.light h4, html.light h5, html.light h6 {
+  font-weight: 800;
+  color: #0f172a; /* Slate 900 for headings */
+}
+
+html.light select, html.light input, html.light textarea, html.light button {
+  font-weight: 600;
+}
+
+html.light span.material-symbols-outlined {
+  font-variation-settings: "'FILL' 0, 'wght' 600"; /* Bold icons */
+}
+
